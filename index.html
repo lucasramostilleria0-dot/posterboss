@@ -2379,28 +2379,45 @@ const Goal = {
 const Drawers = {
   newOrder(prefillItems = null) {
     const s = DB.get('settings');
-    // items ahora llevan customPrice opcional
-    let items = prefillItems ? prefillItems.map(i => ({...i, customPrice: null})) : [{ sizeId: s.sizes[0]?.id || 'a4', qty: 1, customPrice: null }];
+    let items = prefillItems ? prefillItems.map(i => ({ sizeId: i.sizeId, qty: i.qty })) : [{ sizeId: s.sizes[0]?.id || 'a4', qty: 1 }];
     let orderImages = [];
+    let customFinalPrice = null;
     let savedClient = '', savedDate = today(), savedShip = '', savedStatus = 'pending', savedNotes = '';
 
-    const calcItemsForTotals = () => items.map(item => {
+    // Calcula coste total de todos los items
+    const calcTotalCost = () => items.reduce((acc, item) => {
       const sz = getSizeById(item.sizeId);
-      const unitPrice = item.customPrice !== null ? item.customPrice : (sz?.price || 0);
-      const unitCost = (sz?.costFrame||0) + (sz?.costPrint||0);
-      return { sizeId: item.sizeId, qty: item.qty, priceSnapshot: unitPrice, costSnapshot: unitCost };
-    });
+      return acc + ((sz?.costFrame||0) + (sz?.costPrint||0)) * item.qty;
+    }, 0);
+
+    // Precio normal (sin tocar) para mostrar referencia
+    const calcNormalPrice = () => items.reduce((acc, item) => {
+      const sz = getSizeById(item.sizeId);
+      return acc + (sz?.price||0) * item.qty;
+    }, 0);
 
     const renderForm = () => {
-      // Guardar valores actuales antes de re-renderizar
       if ($('o-client')) savedClient = $('o-client').value;
       if ($('o-date')) savedDate = $('o-date').value;
       if ($('o-ship')) savedShip = $('o-ship').value;
       if ($('o-status')) savedStatus = $('o-status').value;
       if ($('o-notes')) savedNotes = $('o-notes').value;
+      // Leer precio final actual del input si existe
+      if ($('o-final-price')) {
+        const v = parseFloat($('o-final-price').value);
+        if (!isNaN(v)) customFinalPrice = v;
+      }
 
-      const totals = calcOrderTotals(calcItemsForTotals());
-      
+      const normalPrice = calcNormalPrice();
+      const totalCost = calcTotalCost();
+      // Si no hay precio personalizado, usar el normal
+      if (customFinalPrice === null) customFinalPrice = normalPrice;
+      const finalPrice = customFinalPrice;
+      const profit = finalPrice - totalCost;
+      const margin = finalPrice > 0 ? (profit / finalPrice * 100) : 0;
+      const discountAmt = normalPrice - finalPrice;
+      const discountPct = normalPrice > 0 ? (discountAmt / normalPrice * 100) : 0;
+
       $('drawer-body').innerHTML = `
         <div class="form-group">
           <label class="form-label">Cliente</label>
@@ -2420,66 +2437,64 @@ const Drawers = {
         <div class="section-label" style="margin-top:4px">Productos</div>
         ${items.map((item, idx) => {
           const sz = getSizeById(item.sizeId);
-          const defaultPrice = sz?.price || 0;
-          const effectivePrice = item.customPrice !== null ? item.customPrice : defaultPrice;
           const unitCost = (sz?.costFrame||0)+(sz?.costPrint||0);
-          const lineProfit = (effectivePrice - unitCost) * item.qty;
           return `
-          <div class="card" style="margin-bottom:8px">
-            <div class="card-body" style="padding:10px 12px">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-                <select class="form-select" style="flex:1" onchange="orderSetSize(${idx},this.value)">
-                  ${s.sizes.map(sz2 => `<option value="${sz2.id}" ${sz2.id===item.sizeId?'selected':''}>${sz2.name}</option>`).join('')}
-                </select>
-                ${items.length > 1 ? `<button class="icon-btn" onclick="orderRemoveItem(${idx})">✕</button>` : ''}
-              </div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                <div class="qty-stepper" style="flex-shrink:0">
-                  <button class="qty-btn" onclick="orderQty(${idx},-1)">−</button>
-                  <input class="qty-val" type="number" value="${item.qty}" min="1" onchange="orderSetQty(${idx},this.value)">
-                  <button class="qty-btn" onclick="orderQty(${idx},+1)">+</button>
-                </div>
-                <div style="flex:1">
-                  <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Precio/ud (normal: ${fmt(defaultPrice)})</div>
-                  <input class="form-input" type="number" step="0.01"
-                    value="${effectivePrice}"
-                    style="padding:7px 10px;font-size:14px;font-weight:600;color:var(--accent)"
-                    oninput="orderSetPrice(${idx},this.value)"
-                    placeholder="${defaultPrice}">
-                </div>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">
-                <span>Coste: ${fmt(unitCost)}/ud</span>
-                <span>Marco: ${fmt(sz?.costFrame||0)} · Impresión: ${fmt(sz?.costPrint||0)}</span>
-                <span style="color:var(--green)">B: ${fmt(lineProfit)}</span>
-              </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <select class="form-select" style="flex:1" onchange="orderSetSize(${idx},this.value)">
+              ${s.sizes.map(sz2 => `<option value="${sz2.id}" ${sz2.id===item.sizeId?'selected':''}>${sz2.name} (${fmt(sz2.price)}/ud)</option>`).join('')}
+            </select>
+            <div class="qty-stepper" style="flex-shrink:0">
+              <button class="qty-btn" onclick="orderQty(${idx},-1)">−</button>
+              <input class="qty-val" type="number" value="${item.qty}" min="1" onchange="orderSetQty(${idx},this.value)">
+              <button class="qty-btn" onclick="orderQty(${idx},+1)">+</button>
             </div>
+            ${items.length > 1 ? `<button class="icon-btn" onclick="orderRemoveItem(${idx})">✕</button>` : ''}
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:8px;padding-left:4px">
+            Coste: ${fmt(unitCost*item.qty)} · Marco: ${fmt((sz?.costFrame||0)*item.qty)} + Impresión: ${fmt((sz?.costPrint||0)*item.qty)}
           </div>`;
         }).join('')}
-        <button class="btn btn-secondary btn-sm" onclick="orderAddItem()" style="margin-bottom:4px">+ Añadir tamaño</button>
+        <button class="btn btn-secondary btn-sm" onclick="orderAddItem()" style="margin-bottom:12px">+ Añadir tamaño</button>
 
-        <div class="card" style="margin:10px 0 14px">
+        <!-- RESUMEN + PRECIO FINAL EDITABLE -->
+        <div class="card" style="margin-bottom:14px">
           <div class="card-body">
             ${items.map(item => {
               const sz = getSizeById(item.sizeId);
-              const ep = item.customPrice !== null ? item.customPrice : (sz?.price||0);
-              return `<div class="calc-row"><span class="label">${item.qty} × ${sz?.name||''} · ${fmt(ep)}/ud</span><span class="value">${fmt(ep*item.qty)}</span></div>`;
+              return `<div class="calc-row"><span class="label">${item.qty} × ${sz?.name||''}</span><span class="value">${fmt((sz?.price||0)*item.qty)}</span></div>`;
             }).join('')}
             <div class="divider"></div>
-            ${totals.discPct > 0 ? `
-              <div class="calc-row"><span class="label">Descuento ${totals.discPct}%</span><span class="value red">−${fmt(totals.discAmt)}</span></div>
-            ` : ''}
-            <div class="calc-row total"><span class="label">Precio final</span><span class="value accent">${fmt(totals.finalPrice)}</span></div>
-            <div class="calc-row"><span class="label">Coste producción</span><span class="value red">−${fmt(totals.cost)}</span></div>
-            <div class="calc-row"><span class="label">Beneficio</span><span class="value green">${fmt(totals.profit)}</span></div>
-            <div class="calc-row"><span class="label">Margen</span><span class="value">${totals.finalPrice > 0 ? ((totals.profit/totals.finalPrice)*100).toFixed(1)+'%' : '—'}</span></div>
+            <div class="calc-row"><span class="label">Precio normal</span><span class="value">${fmt(normalPrice)}</span></div>
+            <div class="calc-row"><span class="label">Coste producción</span><span class="value red">−${fmt(totalCost)}</span></div>
+            <div class="divider"></div>
+
+            <!-- PRECIO FINAL EDITABLE -->
+            <div style="margin:10px 0 6px">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:600">💬 PRECIO FINAL ACORDADO</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input
+                  class="form-input"
+                  type="number"
+                  step="0.01"
+                  id="o-final-price"
+                  value="${finalPrice.toFixed(2)}"
+                  oninput="orderUpdateFinal()"
+                  style="font-size:22px;font-weight:800;color:var(--accent);padding:10px 12px;text-align:center">
+                <span style="font-size:13px;color:var(--text2)">€</span>
+              </div>
+              <div style="font-size:11px;color:var(--text2);margin-top:4px;text-align:center">
+                Toca para cambiar el precio total que cobras
+              </div>
+            </div>
+
+            <div id="o-live-summary"></div>
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Estado</label>
           <select class="form-select" id="o-status">
-            ${['pending','preparing','ready','sent','delivered','cancelled'].map(st => 
+            ${['pending','preparing','ready','sent','delivered','cancelled'].map(st =>
               `<option value="${st}" ${st===savedStatus?'selected':''}>${statusLabel(st)}</option>`
             ).join('')}
           </select>
@@ -2502,12 +2517,33 @@ const Drawers = {
         <div style="height:12px"></div>
       `;
 
-      window.orderSetSize = (i, v) => { items[i].sizeId = v; items[i].customPrice = null; renderForm(); };
+      // Render resumen dinámico inicial
+      orderRenderLiveSummary(finalPrice, totalCost, normalPrice);
+
+      window.orderSetSize = (i, v) => { items[i].sizeId = v; renderForm(); };
       window.orderQty = (i, d) => { items[i].qty = Math.max(1, items[i].qty + d); renderForm(); };
       window.orderSetQty = (i, v) => { items[i].qty = Math.max(1, parseInt(v)||1); renderForm(); };
-      window.orderSetPrice = (i, v) => { items[i].customPrice = parseFloat(v) || 0; };
-      window.orderAddItem = () => { items.push({ sizeId: s.sizes[0]?.id, qty: 1, customPrice: null }); renderForm(); };
+      window.orderAddItem = () => { items.push({ sizeId: s.sizes[0]?.id, qty: 1 }); renderForm(); };
       window.orderRemoveItem = (i) => { items.splice(i, 1); renderForm(); };
+      window.orderUpdateFinal = () => {
+        const v = parseFloat($('o-final-price')?.value) || 0;
+        customFinalPrice = v;
+        orderRenderLiveSummary(v, calcTotalCost(), calcNormalPrice());
+      };
+    };
+
+    function orderRenderLiveSummary(finalPrice, totalCost, normalPrice) {
+      const el = $('o-live-summary');
+      if (!el) return;
+      const profit = finalPrice - totalCost;
+      const margin = finalPrice > 0 ? (profit / finalPrice * 100) : 0;
+      const discountAmt = normalPrice - finalPrice;
+      el.innerHTML = `
+        ${discountAmt > 0.005 ? `<div class="calc-row"><span class="label" style="color:var(--orange)">Rebaja aplicada</span><span class="value red">−${fmt(discountAmt)} (${(discountAmt/normalPrice*100).toFixed(1)}%)</span></div>` : ''}
+        ${discountAmt < -0.005 ? `<div class="calc-row"><span class="label" style="color:var(--green)">Extra cobrado</span><span class="value green">+${fmt(-discountAmt)}</span></div>` : ''}
+        <div class="calc-row"><span class="label">Beneficio</span><span class="value ${profit>=0?'green':'red'}">${fmt(profit)}</span></div>
+        <div class="calc-row"><span class="label">Margen</span><span class="value">${margin.toFixed(1)}%</span></div>
+      `;
     };
 
     window.orderSave = async () => {
@@ -2516,26 +2552,30 @@ const Drawers = {
       if ($('o-ship')) savedShip = $('o-ship').value;
       if ($('o-status')) savedStatus = $('o-status').value;
       if ($('o-notes')) savedNotes = $('o-notes').value;
+      if ($('o-final-price')) customFinalPrice = parseFloat($('o-final-price').value) || 0;
 
       const imgInput = $('o-imgs-input');
       if (imgInput && imgInput.files.length) {
         orderImages = await handleImgUpload(imgInput, orderImages);
       }
 
-      const snap = calcItemsForTotals().map((item, idx) => {
+      const totalCost = calcTotalCost();
+      const normalPrice = calcNormalPrice();
+      const finalPrice = customFinalPrice !== null ? customFinalPrice : normalPrice;
+      const profit = finalPrice - totalCost;
+
+      const snap = items.map(item => {
         const sz = getSizeById(item.sizeId);
         return {
           sizeId: item.sizeId,
           sizeName: sz?.name || item.sizeId,
           qty: item.qty,
-          priceSnapshot: item.priceSnapshot,
-          costSnapshot: item.costSnapshot,
+          priceSnapshot: sz?.price || 0,
+          costSnapshot: (sz?.costFrame||0) + (sz?.costPrint||0),
           costFrame: sz?.costFrame || 0,
-          costPrint: sz?.costPrint || 0,
-          isCustomPrice: items[idx].customPrice !== null
+          costPrint: sz?.costPrint || 0
         };
       });
-      const totals = calcOrderTotals(snap);
 
       const order = {
         id: uid(),
@@ -2544,13 +2584,13 @@ const Drawers = {
         date: savedDate || today(),
         shipDate: savedShip,
         items: snap,
-        price: totals.price,
-        discPct: totals.discPct,
-        discAmt: totals.discAmt,
-        finalPrice: totals.finalPrice,
-        cost: totals.cost,
-        profit: totals.profit,
-        margin: totals.finalPrice > 0 ? (totals.profit/totals.finalPrice)*100 : 0,
+        price: normalPrice,
+        discPct: normalPrice > 0 ? ((normalPrice - finalPrice) / normalPrice * 100) : 0,
+        discAmt: normalPrice - finalPrice,
+        finalPrice,
+        cost: totalCost,
+        profit,
+        margin: finalPrice > 0 ? (profit / finalPrice * 100) : 0,
         status: savedStatus || 'pending',
         notes: savedNotes,
         images: orderImages
