@@ -1,0 +1,3261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f0f">
+<title>PosterBoss</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #242424;
+    --border: #2e2e2e;
+    --text: #f0f0f0;
+    --text2: #8a8a8a;
+    --text3: #555;
+    --accent: #7c6af7;
+    --accent2: #5b4fd4;
+    --green: #22c55e;
+    --red: #ef4444;
+    --orange: #f97316;
+    --yellow: #eab308;
+    --blue: #3b82f6;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --safe-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* SCROLL CONTAINER */
+  .page {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 0 80px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .page-content {
+    padding: 0 16px;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .topbar-right { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: background 0.15s;
+  }
+  .icon-btn:active { background: var(--border); }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    display: flex;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding-bottom: var(--safe-bottom);
+    position: relative;
+    z-index: 20;
+    flex-shrink: 0;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px 6px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text3);
+    font-size: 10px;
+    gap: 2px;
+    transition: color 0.15s;
+    position: relative;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item .nav-icon { font-size: 20px; line-height: 1; }
+  .nav-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 18px);
+    background: var(--red);
+    color: white;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .card-body { padding: 14px; }
+  .card + .card { margin-top: 10px; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin: 20px 0 8px;
+  }
+
+  /* STAT GRID */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.orange { color: var(--orange); }
+  .stat-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* PROGRESS BAR */
+  .progress-wrap { background: var(--bg3); border-radius: 100px; height: 8px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--accent), #a78bfa); transition: width 0.4s; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    font-size: 14px;
+  }
+  .btn:active { opacity: 0.75; transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: white; padding: 12px 18px; }
+  .btn-secondary { background: var(--bg3); color: var(--text); padding: 12px 18px; border: 1px solid var(--border); }
+  .btn-danger { background: #3b1414; color: var(--red); padding: 10px 14px; border: 1px solid #5c2020; }
+  .btn-success { background: #0f2b1a; color: var(--green); padding: 10px 14px; border: 1px solid #1a4a2e; }
+  .btn-sm { padding: 7px 12px; font-size: 12px; }
+  .btn-full { width: 100%; }
+  .btn-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); padding: 0; font-size: 18px; }
+
+  /* FAB */
+  .fab {
+    position: fixed;
+    bottom: calc(72px + var(--safe-bottom));
+    right: 16px;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 24px;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(124,106,247,0.4);
+    z-index: 15;
+    transition: transform 0.15s;
+  }
+  .fab:active { transform: scale(0.92); }
+
+  /* FORM ELEMENTS */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 500; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 15px;
+    padding: 11px 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8a8a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+  .form-textarea { resize: none; height: 90px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* TOGGLE */
+  .toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+  .toggle-label { font-size: 14px; }
+  .toggle-sub { font-size: 12px; color: var(--text2); }
+  .toggle {
+    width: 44px; height: 26px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); border-color: var(--accent); }
+  .toggle::after {
+    content: '';
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px; left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .toggle.on::after { transform: translateX(18px); }
+
+  /* CHIPS */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* STATUS BADGES */
+  .status {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .status-pending { background: #2a2010; color: var(--yellow); }
+  .status-preparing { background: #1a1e2e; color: var(--blue); }
+  .status-ready { background: #1a2e1e; color: var(--green); }
+  .status-sent { background: #1e2a1a; color: #86efac; }
+  .status-delivered { background: #0f2b0f; color: #4ade80; }
+  .status-cancelled { background: #2b0f0f; color: var(--red); }
+
+  /* LIST ITEMS */
+  .list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item-icon {
+    width: 42px; height: 42px;
+    border-radius: var(--radius-sm);
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .list-item-info { flex: 1; min-width: 0; }
+  .list-item-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-item-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .list-item-right { text-align: right; flex-shrink: 0; }
+  .list-item-amount { font-size: 14px; font-weight: 700; }
+  .list-item-amount.green { color: var(--green); }
+
+  /* MODAL / DRAWER */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+  }
+  .overlay.show { display: flex; }
+  .drawer {
+    background: var(--bg2);
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    border-radius: var(--radius) var(--radius) 0 0;
+    max-height: 92dvh;
+    overflow-y: auto;
+    padding-bottom: var(--safe-bottom);
+  }
+  .drawer-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 10px auto 0;
+  }
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: var(--bg2);
+    z-index: 1;
+  }
+  .drawer-title { font-size: 16px; font-weight: 700; }
+  .drawer-body { padding: 16px; }
+
+  /* IMAGE UPLOAD */
+  .img-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    text-align: center;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 13px;
+    transition: border-color 0.15s;
+  }
+  .img-upload-area:hover { border-color: var(--accent); }
+  .img-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .img-thumb {
+    width: 72px; height: 72px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .img-thumb-wrap { position: relative; }
+  .img-thumb-del {
+    position: absolute;
+    top: -6px; right: -6px;
+    width: 18px; height: 18px;
+    background: var(--red);
+    color: white;
+    border-radius: 50%;
+    font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: none;
+  }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text2);
+  }
+  .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* CALC */
+  .calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .calc-row:last-child { border-bottom: none; }
+  .calc-row.total { font-weight: 700; font-size: 16px; }
+  .calc-row .label { color: var(--text2); }
+  .calc-row .value { font-weight: 600; }
+  .calc-row .value.green { color: var(--green); }
+  .calc-row .value.accent { color: var(--accent); }
+  .calc-row .value.red { color: var(--red); }
+
+  /* QTY STEPPER */
+  .qty-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .qty-btn {
+    width: 40px; height: 40px;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qty-btn:active { background: var(--border); }
+  .qty-val {
+    width: 44px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    background: none;
+    color: var(--text);
+    -moz-appearance: textfield;
+  }
+  .qty-val::-webkit-inner-spin-button, .qty-val::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  /* CHART */
+  .chart-wrap { position: relative; width: 100%; height: 140px; }
+  .chart-bars { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 0 0 4px; }
+  .chart-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .chart-bar {
+    width: 100%;
+    min-height: 2px;
+    border-radius: 4px 4px 0 0;
+    background: var(--accent);
+    transition: height 0.4s;
+  }
+  .chart-bar-label { font-size: 9px; color: var(--text2); }
+
+  /* SETTINGS ROW */
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-left { display: flex; align-items: center; gap: 10px; }
+  .settings-row-icon {
+    width: 34px; height: 34px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .settings-row-title { font-size: 14px; font-weight: 500; }
+  .settings-row-sub { font-size: 12px; color: var(--text2); }
+  .settings-row-value { font-size: 13px; color: var(--text2); }
+
+  /* TABS */
+  .tabs { display: flex; background: var(--bg3); border-radius: var(--radius-sm); padding: 3px; gap: 2px; }
+  .tab {
+    flex: 1; padding: 7px 4px;
+    border: none; background: none;
+    color: var(--text2); font-size: 12px; font-weight: 600;
+    cursor: pointer; border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .tab.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+  /* SEARCH */
+  .search-wrap { position: relative; margin-bottom: 12px; }
+  .search-wrap input { padding-left: 36px; }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text2); pointer-events: none; }
+
+  /* NOTIFICATION TOAST */
+  .toast {
+    position: fixed;
+    bottom: calc(80px + var(--safe-bottom) + 10px);
+    left: 16px; right: 16px;
+    max-width: 448px;
+    margin: 0 auto;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.show { display: flex; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  /* FULL MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 150;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-page { flex: 1; overflow-y: auto; padding: 0 16px 24px; }
+
+  /* CATEGORY TAG */
+  .cat-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  /* SCROLL HIDE SCROLLBAR */
+  .page::-webkit-scrollbar, .drawer::-webkit-scrollbar, .modal-page::-webkit-scrollbar { display: none; }
+
+  /* ANIMATION */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 0.2s ease; }
+
+  /* CALENDAR */
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .cal-days { margin-bottom: 4px; }
+  .cal-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.12s;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+  }
+  .cal-cell.empty { background: transparent; border-color: transparent; cursor: default; }
+  .cal-cell:active { background: var(--bg3); }
+  .cal-cell.today { background: var(--accent); border-color: var(--accent); }
+  .cal-cell.today .cal-day-num { color: white; font-weight: 800; }
+  .cal-cell.has-events { border-color: var(--accent); }
+  .cal-day-num { font-size: 13px; font-weight: 600; line-height: 1; }
+  .cal-dots { display: flex; gap: 2px; margin-top: 3px; }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .dot-task { background: var(--blue); }
+  .dot-done { background: var(--green); }
+  .dot-order { background: var(--orange); }
+
+  /* LIGHTBOX */
+  .lightbox {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .lightbox.show { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 80dvh; object-fit: contain; border-radius: var(--radius-sm); }
+  .lightbox-close { position: absolute; top: 16px; right: 16px; font-size: 24px; color: white; cursor: pointer; background: rgba(255,255,255,0.1); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- TOP BAR -->
+  <div class="topbar" id="topbar">
+    <h1 id="page-title">PosterBoss</h1>
+    <div class="topbar-right" id="topbar-actions"></div>
+  </div>
+
+  <!-- MAIN PAGE CONTENT -->
+  <div class="page" id="main-page">
+    <div class="page-content" id="page-content"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-item active" data-page="home" onclick="App.navigate('home')">
+      <span class="nav-icon">🏠</span>
+      <span>Inicio</span>
+    </button>
+    <button class="nav-item" data-page="orders" onclick="App.navigate('orders')">
+      <span class="nav-icon">📦</span>
+      <span>Pedidos</span>
+      <span class="nav-badge" id="orders-badge" style="display:none">0</span>
+    </button>
+    <button class="nav-item" data-page="catalog" onclick="App.navigate('catalog')">
+      <span class="nav-icon">🖼️</span>
+      <span>Catálogo</span>
+    </button>
+    <button class="nav-item" data-page="finances" onclick="App.navigate('finances')">
+      <span class="nav-icon">📈</span>
+      <span>Finanzas</span>
+    </button>
+    <button class="nav-item" data-page="calendar" onclick="App.navigate('calendar')">
+      <span class="nav-icon">📅</span>
+      <span>Agenda</span>
+    </button>
+    <button class="nav-item" data-page="more" onclick="App.navigate('more')">
+      <span class="nav-icon">⋯</span>
+      <span>Más</span>
+    </button>
+  </nav>
+</div>
+
+<!-- OVERLAYS -->
+<div class="overlay" id="drawer-overlay" onclick="App.closeDrawer(event)">
+  <div class="drawer" id="drawer-content">
+    <div class="drawer-handle"></div>
+    <div class="drawer-header">
+      <span class="drawer-title" id="drawer-title">Título</span>
+      <button class="icon-btn" onclick="App.closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="topbar">
+    <button class="icon-btn" onclick="App.closeModal()">←</button>
+    <h1 id="modal-title">Detalle</h1>
+    <div class="topbar-right" id="modal-actions"></div>
+  </div>
+  <div class="modal-page" id="modal-body"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="lightbox" id="lightbox" onclick="document.getElementById('lightbox').classList.remove('show')">
+  <button class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('show')">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+// =============================================
+// DATA LAYER — LocalStorage persistence
+// =============================================
+const DB = {
+  get(key) {
+    try { return JSON.parse(localStorage.getItem('pb_' + key)) ?? null; } catch { return null; }
+  },
+  set(key, val) {
+    try { localStorage.setItem('pb_' + key, JSON.stringify(val)); } catch(e) { console.error(e); }
+  },
+  init() {
+    const defaults = {
+      settings: {
+        sizes: [
+          { id: 'a4', name: 'A4', price: 7.50, costFrame: 2.00, costPrint: 0.40 },
+          { id: 'a3', name: 'A3', price: 12.50, costFrame: 2.50, costPrint: 0.80 }
+        ],
+        discounts: {
+          enabled: false,
+          rules: [
+            { min: 20, pct: 5 }, { min: 40, pct: 10 },
+            { min: 60, pct: 15 }, { min: 100, pct: 20 }
+          ]
+        },
+        distribution: [
+          { label: 'Reinversión', pct: 40, emoji: '🔄' },
+          { label: 'Ahorro/Inversión', pct: 30, emoji: '💰' },
+          { label: 'Amigos/Ocio', pct: 15, emoji: '🎉' },
+          { label: 'Para mí', pct: 15, emoji: '😎' }
+        ],
+        categories: ['Cine','Fútbol','Música','Series','Anime','Arte','Otros'],
+        goalAmount: 500,
+        goalDate: '2027-05-31',
+        darkMode: true,
+        businessName: 'PosterBoss'
+      },
+      orders: [],
+      catalog: [],
+      notes: [],
+      expenses: [],
+      tasks: [],
+      goalContributions: [],
+      cashMovements: []
+    };
+    for (const [k, v] of Object.entries(defaults)) {
+      if (this.get(k) === null) this.set(k, v);
+    }
+  }
+};
+
+// =============================================
+// HELPERS
+// =============================================
+const $ = id => document.getElementById(id);
+const fmt = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
+const fmtPct = n => (n || 0).toFixed(1) + '%';
+const uid = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+const today = () => new Date().toISOString().split('T')[0];
+const fmtDate = d => d ? new Date(d + 'T00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '';
+const fmtDateFull = d => d ? new Date(d + 'T00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+function calcDiscount(total, discounts) {
+  if (!discounts.enabled || !discounts.rules.length) return { pct: 0, amount: 0 };
+  const applicable = discounts.rules.filter(r => total >= r.min).sort((a,b) => b.pct - a.pct);
+  if (!applicable.length) return { pct: 0, amount: 0 };
+  const best = applicable[0];
+  return { pct: best.pct, amount: total * best.pct / 100 };
+}
+
+function getSizeById(id) {
+  const s = DB.get('settings');
+  return s.sizes.find(sz => sz.id === id);
+}
+
+function calcOrderTotals(items) {
+  // items: [{sizeId, qty, priceSnapshot, costSnapshot}]
+  const s = DB.get('settings');
+  let price = 0, cost = 0;
+  for (const item of items) {
+    const sz = item.priceSnapshot ? null : getSizeById(item.sizeId);
+    const unitPrice = item.priceSnapshot ?? sz?.price ?? 0;
+    const unitCost = item.costSnapshot ?? ((sz?.costFrame ?? 0) + (sz?.costPrint ?? 0));
+    price += unitPrice * item.qty;
+    cost += unitCost * item.qty;
+  }
+  const disc = calcDiscount(price, s.discounts);
+  const discAmt = disc.amount;
+  const finalPrice = price - discAmt;
+  const profit = finalPrice - cost;
+  const margin = finalPrice > 0 ? (profit / finalPrice * 100) : 0;
+  return { price, cost, discPct: disc.pct, discAmt, finalPrice, profit, margin };
+}
+
+function imgToThumb(src) {
+  return `<div class="img-thumb-wrap"><img class="img-thumb" src="${src}" onclick="App.lightbox('${src}')"></div>`;
+}
+
+// File → base64
+function fileToB64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+async function handleImgUpload(inputEl, existing = []) {
+  const files = Array.from(inputEl.files);
+  const results = [];
+  for (const f of files) {
+    const b64 = await fileToB64(f);
+    results.push(b64);
+  }
+  return [...existing, ...results];
+}
+
+// =============================================
+// APP CONTROLLER
+// =============================================
+const App = {
+  currentPage: 'home',
+  drawerOpen: false,
+  modalOpen: false,
+  _toastTimer: null,
+
+  init() {
+    DB.init();
+    this.navigate('home');
+    this.updateBadge();
+  },
+
+  navigate(page) {
+    this.currentPage = page;
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.page === page);
+    });
+    const pages = { home: Pages.home, orders: Pages.orders, catalog: Pages.catalog, finances: Pages.finances, calendar: Pages.calendar, more: Pages.more };
+    if (pages[page]) pages[page]();
+  },
+
+  openDrawer(title, bodyHTML) {
+    $('drawer-title').textContent = title;
+    $('drawer-body').innerHTML = bodyHTML;
+    $('drawer-overlay').classList.add('show');
+    this.drawerOpen = true;
+  },
+
+  closeDrawer(e) {
+    if (e && e.target !== $('drawer-overlay')) return;
+    $('drawer-overlay').classList.remove('show');
+    this.drawerOpen = false;
+  },
+
+  forceCloseDrawer() {
+    $('drawer-overlay').classList.remove('show');
+    this.drawerOpen = false;
+  },
+
+  openModal(title, bodyHTML, actions = '') {
+    $('modal-title').textContent = title;
+    $('modal-body').innerHTML = bodyHTML;
+    $('modal-actions').innerHTML = actions;
+    $('modal-overlay').classList.add('show');
+    $('modal-body').scrollTop = 0;
+    this.modalOpen = true;
+  },
+
+  closeModal() {
+    $('modal-overlay').classList.remove('show');
+    this.modalOpen = false;
+    // Refresh current page
+    this.navigate(this.currentPage);
+  },
+
+  toast(msg, type = 'success') {
+    const t = $('toast');
+    t.textContent = (type === 'success' ? '✓ ' : '✗ ') + msg;
+    t.className = `toast show ${type}`;
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  },
+
+  lightbox(src) {
+    $('lightbox-img').src = src;
+    $('lightbox').classList.add('show');
+  },
+
+  updateBadge() {
+    const orders = DB.get('orders') || [];
+    const pending = orders.filter(o => ['pending','preparing'].includes(o.status)).length;
+    const badge = $('orders-badge');
+    if (badge) {
+      badge.textContent = pending;
+      badge.style.display = pending > 0 ? 'flex' : 'none';
+    }
+  }
+};
+
+// =============================================
+// PAGES
+// =============================================
+const Pages = {};
+
+// ---- HOME ----
+Pages.home = function() {
+  $('page-title').textContent = 'PosterBoss';
+  $('topbar-actions').innerHTML = `<button class="icon-btn" onclick="Pages.settings()">⚙️</button>`;
+  
+  const orders = DB.get('orders') || [];
+  const expenses = DB.get('expenses') || [];
+  const s = DB.get('settings');
+  const contribs = DB.get('goalContributions') || [];
+  const tasks = DB.get('tasks') || [];
+  const cash = DB.get('cashMovements') || [];
+
+  // Calcular finanzas
+  const delivered = orders.filter(o => o.status === 'delivered');
+  const totalRevenue = delivered.reduce((a, o) => a + (o.finalPrice || 0), 0);
+  const totalCost = delivered.reduce((a, o) => a + (o.cost || 0), 0);
+  const totalProfit = totalRevenue - totalCost;
+
+  const pending = orders.filter(o => ['pending','preparing','ready'].includes(o.status)).length;
+  const totalPosters = delivered.reduce((a, o) => a + (o.items || []).reduce((b, i) => b + i.qty, 0), 0);
+
+  const goalTotal = contribs.reduce((a, c) => a + c.amount, 0);
+  const goalPct = Math.min(100, (goalTotal / (s.goalAmount || 500)) * 100);
+
+  // Cash disponible (revenue - expenses reinvertidas)
+  const totalExpenses = expenses.reduce((a, e) => a + (e.total || 0), 0);
+  const cashAvail = totalRevenue - totalExpenses;
+
+  // Próximas tareas
+  const upcomingTasks = tasks.filter(t => !t.done)
+    .sort((a,b) => (a.date || '9') > (b.date || '9') ? 1 : -1)
+    .slice(0, 3);
+
+  // Pedidos pendientes próximos
+  const upcomingOrders = orders.filter(o => ['pending','preparing'].includes(o.status))
+    .sort((a,b) => (a.shipDate || '9') > (b.shipDate || '9') ? 1 : -1)
+    .slice(0, 3);
+
+  $('page-content').innerHTML = `
+    <div style="height:12px"></div>
+    
+    <!-- STAT GRID -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">💰 Disponible</div>
+        <div class="stat-value accent">${fmt(cashAvail)}</div>
+        <div class="stat-sub">Ingresos − gastos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">📈 Beneficio</div>
+        <div class="stat-value green">${fmt(totalProfit)}</div>
+        <div class="stat-sub">${fmtPct(totalRevenue > 0 ? totalProfit/totalRevenue*100 : 0)} margen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">📦 Pendientes</div>
+        <div class="stat-value ${pending > 0 ? 'orange' : 'green'}">${pending}</div>
+        <div class="stat-sub">pedidos activos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🖼️ Pósters</div>
+        <div class="stat-value">${totalPosters}</div>
+        <div class="stat-sub">vendidos</div>
+      </div>
+    </div>
+
+    <!-- OBJETIVO -->
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div style="font-weight:700;font-size:14px">🎯 Objetivo ${fmt(s.goalAmount || 500)}</div>
+            <div style="font-size:11px;color:var(--text2)">Meta: ${fmtDateFull(s.goalDate)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:20px;font-weight:700;color:var(--accent)">${fmt(goalTotal)}</div>
+            <div style="font-size:11px;color:var(--text2)">${fmtPct(goalPct)}</div>
+          </div>
+        </div>
+        <div class="progress-wrap"><div class="progress-bar" style="width:${goalPct}%"></div></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px">Faltan ${fmt((s.goalAmount||500) - goalTotal)}</div>
+      </div>
+    </div>
+
+    <!-- ACCIONES RÁPIDAS -->
+    <div class="section-label">Acciones rápidas</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+      <button class="btn btn-primary btn-full" onclick="Drawers.newOrder()">📦 Nuevo pedido</button>
+      <button class="btn btn-secondary btn-full" onclick="Drawers.newExpense()">💸 Nuevo gasto</button>
+      <button class="btn btn-secondary btn-full" onclick="Drawers.newNote()">📝 Nueva nota</button>
+      <button class="btn btn-secondary btn-full" onclick="App.navigate('catalog');setTimeout(Drawers.newProduct,100)">🖼️ Añadir diseño</button>
+    </div>
+
+    <!-- PEDIDOS PRÓXIMOS -->
+    ${upcomingOrders.length ? `
+    <div class="section-label">Próximos envíos</div>
+    <div class="card"><div class="card-body" style="padding:4px 14px">
+      ${upcomingOrders.map(o => `
+        <div class="list-item" onclick="Modals.orderDetail('${o.id}')">
+          <div class="list-item-icon">${statusEmoji(o.status)}</div>
+          <div class="list-item-info">
+            <div class="list-item-title">${o.client || 'Sin nombre'}</div>
+            <div class="list-item-sub">${statusLabel(o.status)} · ${o.shipDate ? fmtDate(o.shipDate) : 'Sin fecha'}</div>
+          </div>
+          <div class="list-item-right">
+            <div class="list-item-amount green">${fmt(o.finalPrice)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div></div>` : ''}
+
+    <!-- TAREAS -->
+    ${upcomingTasks.length ? `
+    <div class="section-label">Tareas pendientes</div>
+    <div class="card"><div class="card-body" style="padding:4px 14px">
+      ${upcomingTasks.map(t => `
+        <div class="list-item">
+          <div class="list-item-icon" onclick="Tasks.toggle('${t.id}')" style="cursor:pointer;font-size:20px">
+            ${t.done ? '✅' : '⬜'}
+          </div>
+          <div class="list-item-info">
+            <div class="list-item-title" style="${t.done ? 'text-decoration:line-through;color:var(--text2)' : ''}">${t.title}</div>
+            <div class="list-item-sub">${t.date ? fmtDate(t.date) : 'Sin fecha'}${t.time ? ' · '+t.time : ''}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div></div>` : ''}
+
+    <div style="height:8px"></div>
+
+    <!-- CALC RÁPIDA -->
+    <div class="section-label">Calculadora rápida</div>
+    <div id="quick-calc"></div>
+    <div style="height:20px"></div>
+  `;
+  
+  QuickCalc.render('quick-calc');
+};
+
+function statusEmoji(s) {
+  const map = { pending:'🕐', preparing:'🔧', ready:'✅', sent:'🚚', delivered:'📬', cancelled:'❌' };
+  return map[s] || '📦';
+}
+function statusLabel(s) {
+  const map = { pending:'Pendiente', preparing:'En preparación', ready:'Preparado', sent:'Enviado', delivered:'Entregado', cancelled:'Cancelado' };
+  return map[s] || s;
+}
+function statusClass(s) {
+  const map = { pending:'status-pending', preparing:'status-preparing', ready:'status-ready', sent:'status-sent', delivered:'status-delivered', cancelled:'status-cancelled' };
+  return map[s] || '';
+}
+
+// ---- QUICK CALC ----
+const QuickCalc = {
+  state: { items: [{ sizeId: 'a3', qty: 1 }, { sizeId: 'a4', qty: 1 }] },
+  
+  render(containerId) {
+    const s = DB.get('settings');
+    const container = $(containerId);
+    if (!container) return;
+    
+    const itemsHTML = this.state.items.map((item, idx) => {
+      const sz = getSizeById(item.sizeId);
+      return `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <select class="form-select" style="flex:1" onchange="QuickCalc.setSize(${idx}, this.value)">
+            ${s.sizes.map(sz2 => `<option value="${sz2.id}" ${sz2.id===item.sizeId?'selected':''}>${sz2.name} (${fmt(sz2.price)})</option>`).join('')}
+          </select>
+          <div class="qty-stepper">
+            <button class="qty-btn" onclick="QuickCalc.qty(${idx},-1)">−</button>
+            <input class="qty-val" type="number" value="${item.qty}" min="1" onchange="QuickCalc.setQty(${idx},this.value)">
+            <button class="qty-btn" onclick="QuickCalc.qty(${idx},+1)">+</button>
+          </div>
+          ${this.state.items.length > 1 ? `<button class="icon-btn" onclick="QuickCalc.remove(${idx})">✕</button>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    const totals = this._calc();
+    
+    container.innerHTML = `
+      <div class="card">
+        <div class="card-body">
+          ${itemsHTML}
+          <button class="btn btn-secondary btn-sm" onclick="QuickCalc.add()" style="margin-bottom:12px">+ Añadir tamaño</button>
+          <div class="divider"></div>
+          ${totals.discPct > 0 ? `
+            <div class="calc-row"><span class="label">Precio normal</span><span class="value">${fmt(totals.price)}</span></div>
+            <div class="calc-row"><span class="label">Descuento ${totals.discPct}%</span><span class="value red">−${fmt(totals.discAmt)}</span></div>
+          ` : ''}
+          <div class="calc-row total"><span class="label">Precio final</span><span class="value accent">${fmt(totals.finalPrice)}</span></div>
+          <div class="calc-row"><span class="label">Coste</span><span class="value red">−${fmt(totals.cost)}</span></div>
+          <div class="calc-row"><span class="label">Beneficio</span><span class="value green">+${fmt(totals.profit)}</span></div>
+          <div class="calc-row"><span class="label">Margen</span><span class="value">${fmtPct(totals.margin)}</span></div>
+        </div>
+      </div>
+    `;
+  },
+
+  _calc() {
+    const items = this.state.items.map(item => {
+      const sz = getSizeById(item.sizeId);
+      return { sizeId: item.sizeId, qty: item.qty, priceSnapshot: sz?.price, costSnapshot: (sz?.costFrame||0)+(sz?.costPrint||0) };
+    });
+    return calcOrderTotals(items);
+  },
+
+  add() { this.state.items.push({ sizeId: 'a4', qty: 1 }); this.render('quick-calc'); },
+  remove(i) { this.state.items.splice(i, 1); this.render('quick-calc'); },
+  setSize(i, v) { this.state.items[i].sizeId = v; this.render('quick-calc'); },
+  qty(i, d) { this.state.items[i].qty = Math.max(1, this.state.items[i].qty + d); this.render('quick-calc'); },
+  setQty(i, v) { this.state.items[i].qty = Math.max(1, parseInt(v) || 1); this.render('quick-calc'); }
+};
+
+// ---- ORDERS PAGE ----
+Pages.orders = function() {
+  $('page-title').textContent = 'Pedidos';
+  $('topbar-actions').innerHTML = `<button class="icon-btn" onclick="Drawers.newOrder()">＋</button>`;
+
+  const orders = (DB.get('orders') || []).sort((a,b) => b.createdAt > a.createdAt ? 1 : -1);
+  const statuses = ['all','pending','preparing','ready','sent','delivered','cancelled'];
+  let currentStatus = window._orderFilter || 'all';
+
+  function render(filter) {
+    window._orderFilter = filter;
+    const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter);
+    $('page-content').innerHTML = `
+      <div style="height:10px"></div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="form-input" placeholder="Buscar cliente..." oninput="Orders.search(this.value)">
+      </div>
+      <div style="overflow-x:auto;padding-bottom:6px">
+        <div class="chip-row" style="flex-wrap:nowrap;min-width:max-content">
+          ${statuses.map(st => `<div class="chip ${filter===st?'active':''}" onclick="Orders.filter('${st}')">${st==='all'?'Todos':statusLabel(st)}</div>`).join('')}
+        </div>
+      </div>
+      <div id="orders-list"></div>
+    `;
+    Orders.renderList(filtered);
+  }
+
+  render(currentStatus);
+};
+
+const Orders = {
+  filter(st) {
+    window._orderFilter = st;
+    Pages.orders();
+  },
+  search(q) {
+    const orders = (DB.get('orders') || []).filter(o => 
+      (o.client || '').toLowerCase().includes(q.toLowerCase()) ||
+      (o.notes || '').toLowerCase().includes(q.toLowerCase())
+    );
+    this.renderList(orders);
+  },
+  renderList(list) {
+    const el = $('orders-list');
+    if (!el) return;
+    if (!list.length) {
+      el.innerHTML = `<div class="empty-state"><div class="emoji">📦</div><p>No hay pedidos aquí.<br>Pulsa + para crear uno nuevo.</p></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="card"><div class="card-body" style="padding:4px 14px">
+      ${list.map(o => `
+        <div class="list-item" onclick="Modals.orderDetail('${o.id}')">
+          <div class="list-item-icon">${statusEmoji(o.status)}</div>
+          <div class="list-item-info">
+            <div class="list-item-title">${o.client || 'Sin nombre'}</div>
+            <div class="list-item-sub">
+              <span class="status ${statusClass(o.status)}">${statusLabel(o.status)}</span>
+              ${o.date ? ' · '+fmtDate(o.date) : ''}
+            </div>
+          </div>
+          <div class="list-item-right">
+            <div class="list-item-amount green">${fmt(o.finalPrice)}</div>
+            <div style="font-size:11px;color:var(--text2)">B: ${fmt(o.profit)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div></div>`;
+  }
+};
+
+// ---- CATALOG PAGE ----
+Pages.catalog = function() {
+  $('page-title').textContent = 'Catálogo';
+  $('topbar-actions').innerHTML = `<button class="icon-btn" onclick="Drawers.newProduct()">＋</button>`;
+  
+  const products = DB.get('catalog') || [];
+  const s = DB.get('settings');
+  const cats = ['Todas', ...s.categories];
+  let currentCat = window._catFilter || 'Todas';
+
+  function render(cat) {
+    window._catFilter = cat;
+    const filtered = cat === 'Todas' ? products : products.filter(p => p.category === cat);
+    const available = filtered.filter(p => p.available !== false);
+    const unavailable = filtered.filter(p => p.available === false);
+    
+    $('page-content').innerHTML = `
+      <div style="height:10px"></div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="form-input" placeholder="Buscar diseño..." oninput="Catalog.search(this.value)">
+      </div>
+      <div style="overflow-x:auto;padding-bottom:8px">
+        <div class="chip-row" style="flex-wrap:nowrap;min-width:max-content">
+          ${cats.map(c => `<div class="chip ${currentCat===c?'active':''}" onclick="Catalog.setCat('${c}')">${c}</div>`).join('')}
+        </div>
+      </div>
+      <div id="catalog-grid"></div>
+    `;
+    Catalog.renderGrid(available, unavailable);
+  }
+
+  render(currentCat);
+};
+
+const Catalog = {
+  setCat(c) { window._catFilter = c; Pages.catalog(); },
+  search(q) {
+    const products = (DB.get('catalog') || []).filter(p =>
+      (p.name || '').toLowerCase().includes(q.toLowerCase()) ||
+      (p.category || '').toLowerCase().includes(q.toLowerCase())
+    );
+    this.renderGrid(products.filter(p => p.available !== false), products.filter(p => p.available === false));
+  },
+  renderGrid(avail, unavail) {
+    const el = $('catalog-grid');
+    if (!el) return;
+    const all = [...avail, ...unavail];
+    if (!all.length) {
+      el.innerHTML = `<div class="empty-state"><div class="emoji">🖼️</div><p>Tu catálogo está vacío.<br>Añade tu primer diseño.</p></div>`;
+      return;
+    }
+    const cards = all.map(p => `
+      <div class="card" style="cursor:pointer" onclick="Modals.productDetail('${p.id}')">
+        ${p.images && p.images[0] ? `<img src="${p.images[0]}" style="width:100%;height:140px;object-fit:cover;border-radius:var(--radius) var(--radius) 0 0;display:block">` : `<div style="width:100%;height:100px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:36px;border-radius:var(--radius) var(--radius) 0 0">🖼️</div>`}
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+              <div style="font-size:11px;color:var(--text2)">${p.size || ''} · <span class="cat-tag">${p.category || ''}</span></div>
+            </div>
+            ${p.available === false ? '<span style="font-size:10px;color:var(--text2);background:var(--bg3);padding:2px 6px;border-radius:100px;border:1px solid var(--border)">No disp.</span>' : ''}
+          </div>
+          <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:16px;font-weight:700;color:var(--accent)">${fmt(p.price)}</span>
+            <span style="font-size:11px;color:var(--green)">B: ${fmt((p.price||0) - (p.cost||0))}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${cards}</div>`;
+  }
+};
+
+// ---- FINANCES PAGE ----
+Pages.finances = function() {
+  $('page-title').textContent = 'Finanzas';
+  $('topbar-actions').innerHTML = '';
+
+  const orders = DB.get('orders') || [];
+  const expenses = DB.get('expenses') || [];
+  const s = DB.get('settings');
+  
+  let period = window._finPeriod || 'month';
+  
+  function filterOrders(p) {
+    const now = new Date();
+    return orders.filter(o => {
+      if (o.status !== 'delivered') return false;
+      const d = new Date(o.date || o.createdAt);
+      if (p === 'today') return d.toDateString() === now.toDateString();
+      if (p === 'week') { const w = new Date(now); w.setDate(now.getDate()-7); return d >= w; }
+      if (p === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      if (p === 'year') return d.getFullYear() === now.getFullYear();
+      return true;
+    });
+  }
+
+  function renderContent(p) {
+    window._finPeriod = p;
+    const filtered = filterOrders(p);
+    const allExpenses = expenses; // TODO: filter expenses by period too
+
+    const revenue = filtered.reduce((a, o) => a + (o.finalPrice || 0), 0);
+    const cost = filtered.reduce((a, o) => a + (o.cost || 0), 0);
+    const profit = revenue - cost;
+    const nOrders = filtered.length;
+    const nPosters = filtered.reduce((a, o) => a + (o.items||[]).reduce((b,i) => b+i.qty, 0), 0);
+    const expTotal = allExpenses.reduce((a, e) => a + (e.total||0), 0);
+    const cashAvail = revenue - expTotal;
+
+    // Distribución
+    const dist = s.distribution || [];
+
+    // Datos mensuales (año actual)
+    const monthData = Array.from({length:12}, (_, i) => {
+      const mo = orders.filter(o => {
+        if (o.status !== 'delivered') return false;
+        const d = new Date(o.date || o.createdAt);
+        return d.getMonth() === i && d.getFullYear() === new Date().getFullYear();
+      });
+      return {
+        rev: mo.reduce((a,o) => a + (o.finalPrice||0), 0),
+        prof: mo.reduce((a,o) => a + (o.profit||0), 0),
+        label: ['E','F','M','A','M','J','J','A','S','O','N','D'][i]
+      };
+    });
+
+    const maxRev = Math.max(...monthData.map(m => m.rev), 1);
+
+    $('page-content').innerHTML = `
+      <div style="height:10px"></div>
+      <!-- PERIOD TABS -->
+      <div class="tabs" style="margin-bottom:14px">
+        ${[['today','Hoy'],['week','Semana'],['month','Mes'],['year','Año'],['all','Todo']].map(([v,l]) => 
+          `<button class="tab ${p===v?'active':''}" onclick="Finances.period('${v}')">${l}</button>`
+        ).join('')}
+      </div>
+
+      <!-- STATS -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">💰 Ingresos</div>
+          <div class="stat-value accent">${fmt(revenue)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">📈 Beneficio</div>
+          <div class="stat-value green">${fmt(profit)}</div>
+          <div class="stat-sub">${fmtPct(revenue > 0 ? profit/revenue*100 : 0)} margen</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">📦 Pedidos</div>
+          <div class="stat-value">${nOrders}</div>
+          <div class="stat-sub">${nOrders > 0 ? fmt(profit/nOrders) + '/pedido' : '—'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">🖼️ Pósters</div>
+          <div class="stat-value">${nPosters}</div>
+          <div class="stat-sub">${nPosters > 0 ? fmt(profit/nPosters) + '/póster' : '—'}</div>
+        </div>
+      </div>
+
+      <!-- DINERO DISPONIBLE -->
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-body">
+          <div style="font-weight:700;margin-bottom:10px;font-size:14px">💵 Dinero disponible</div>
+          <div class="calc-row"><span class="label">Ingresos totales</span><span class="value">${fmt(revenue)}</span></div>
+          <div class="calc-row"><span class="label">Gastos reinvertidos</span><span class="value red">−${fmt(expTotal)}</span></div>
+          <div class="calc-row total"><span class="label">Disponible</span><span class="value accent">${fmt(cashAvail)}</span></div>
+          <div class="calc-row"><span class="label">Coste producción</span><span class="value red">−${fmt(cost)}</span></div>
+          <div class="calc-row"><span class="label">Beneficio real</span><span class="value green">${fmt(profit)}</span></div>
+        </div>
+      </div>
+
+      <!-- DISTRIBUCIÓN -->
+      ${profit > 0 ? `
+      <div class="section-label">Distribución del beneficio</div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-body">
+          ${dist.map(d => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span>${d.emoji}</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600">${d.label}</div>
+                  <div style="font-size:11px;color:var(--text2)">${d.pct}%</div>
+                </div>
+              </div>
+              <div style="font-weight:700;color:var(--green)">${fmt(profit * d.pct / 100)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>` : ''}
+
+      <!-- GRÁFICO MENSUAL -->
+      <div class="section-label">Ingresos por mes (${new Date().getFullYear()})</div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-body">
+          <div class="chart-bars">
+            ${monthData.map(m => `
+              <div class="chart-bar-col">
+                <div class="chart-bar" style="height:${(m.rev/maxRev)*100}px;min-height:${m.rev>0?'4px':'0'}"></div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="chart-bars" style="height:auto;align-items:center;padding:0">
+            ${monthData.map(m => `<div class="chart-bar-col"><div class="chart-bar-label">${m.label}</div></div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- GASTOS -->
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="section-label" style="margin:0">Gastos registrados</div>
+        <button class="btn btn-secondary btn-sm" onclick="Drawers.newExpense()">+ Añadir</button>
+      </div>
+      <div style="margin-top:8px" id="expenses-list"></div>
+
+      <!-- CASH MOVEMENTS -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+        <div class="section-label" style="margin:0">Movimientos de caja</div>
+        <button class="btn btn-secondary btn-sm" onclick="Drawers.newCashMovement()">+ Añadir</button>
+      </div>
+      <div style="margin-top:8px" id="cash-list"></div>
+
+      <div style="height:20px"></div>
+    `;
+    
+    Finances.renderExpenses();
+    Finances.renderCash();
+  }
+
+  renderContent(period);
+};
+
+const Finances = {
+  period(p) { window._finPeriod = p; Pages.finances(); },
+  renderExpenses() {
+    const expenses = (DB.get('expenses') || []).sort((a,b) => b.date > a.date ? 1 : -1).slice(0,8);
+    const el = $('expenses-list');
+    if (!el) return;
+    if (!expenses.length) {
+      el.innerHTML = `<div class="card"><div class="card-body" style="color:var(--text2);font-size:13px;text-align:center">Sin gastos registrados</div></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="card"><div class="card-body" style="padding:4px 14px">
+      ${expenses.map(e => `
+        <div class="list-item">
+          <div class="list-item-icon">💸</div>
+          <div class="list-item-info">
+            <div class="list-item-title">${e.category} · ${e.description || ''}</div>
+            <div class="list-item-sub">${fmtDate(e.date)} · ${e.qty || 1} unid.</div>
+          </div>
+          <div class="list-item-right">
+            <div class="list-item-amount red">−${fmt(e.total)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div></div>`;
+  },
+  renderCash() {
+    const movs = (DB.get('cashMovements') || []).sort((a,b) => b.date > a.date ? 1 : -1).slice(0,6);
+    const el = $('cash-list');
+    if (!el) return;
+    if (!movs.length) {
+      el.innerHTML = `<div class="card"><div class="card-body" style="color:var(--text2);font-size:13px;text-align:center">Sin movimientos</div></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="card"><div class="card-body" style="padding:4px 14px">
+      ${movs.map(m => `
+        <div class="list-item">
+          <div class="list-item-icon">${m.type==='in'?'💵':'💸'}</div>
+          <div class="list-item-info">
+            <div class="list-item-title">${m.label}</div>
+            <div class="list-item-sub">${fmtDate(m.date)} · ${m.method||'Efectivo'}</div>
+          </div>
+          <div class="list-item-right">
+            <div class="list-item-amount ${m.type==='in'?'green':'red'}">${m.type==='in'?'+':'−'}${fmt(m.amount)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div></div>`;
+  }
+};
+
+// ---- CALENDAR PAGE ----
+Pages.calendar = function() {
+  $('page-title').textContent = 'Agenda';
+  $('topbar-actions').innerHTML = `<button class="icon-btn" onclick="Drawers.newTask()">＋</button>`;
+
+  const tasks = DB.get('tasks') || [];
+  const orders = DB.get('orders') || [];
+
+  const now = new Date();
+  let year = window._calYear || now.getFullYear();
+  let month = window._calMonth !== undefined ? window._calMonth : now.getMonth();
+
+  // Construir calendario
+  const firstDay = new Date(year, month, 1).getDay(); // 0=dom
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // Recopilar eventos por día
+  const eventsByDay = {};
+  tasks.forEach(t => {
+    if (!t.date) return;
+    const d = new Date(t.date + 'T00:00');
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const day = d.getDate();
+      if (!eventsByDay[day]) eventsByDay[day] = [];
+      eventsByDay[day].push({ type: 'task', label: t.title, done: t.done, id: t.id });
+    }
+  });
+  orders.forEach(o => {
+    if (o.shipDate) {
+      const d = new Date(o.shipDate + 'T00:00');
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        const day = d.getDate();
+        if (!eventsByDay[day]) eventsByDay[day] = [];
+        eventsByDay[day].push({ type: 'order', label: '📦 ' + (o.client || 'Envío'), id: o.id });
+      }
+    }
+    if (o.date) {
+      const d = new Date(o.date + 'T00:00');
+      if (d.getFullYear() === year && d.getMonth() === month && o.date !== o.shipDate) {
+        const day = d.getDate();
+        if (!eventsByDay[day]) eventsByDay[day] = [];
+        eventsByDay[day].push({ type: 'order-date', label: '🛒 ' + (o.client || 'Pedido'), id: o.id });
+      }
+    }
+  });
+
+  // Render días
+  const startPad = (firstDay + 6) % 7; // lunes primero
+  let cells = '';
+  for (let i = 0; i < startPad; i++) cells += `<div class="cal-cell empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === now.getDate() && month === now.getMonth() && year === now.getFullYear();
+    const evs = eventsByDay[d] || [];
+    const hasDot = evs.length > 0;
+    cells += `
+      <div class="cal-cell ${isToday?'today':''} ${hasDot?'has-events':''}" onclick="CalPage.selectDay(${d})">
+        <div class="cal-day-num">${d}</div>
+        ${hasDot ? `<div class="cal-dots">${evs.slice(0,3).map(e => `<span class="cal-dot ${e.type==='task'?(e.done?'dot-done':'dot-task'):'dot-order'}"></span>`).join('')}</div>` : ''}
+      </div>`;
+  }
+
+  $('page-content').innerHTML = `
+    <div style="height:8px"></div>
+
+    <!-- MONTH NAV -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <button class="icon-btn" onclick="CalPage.prevMonth()">‹</button>
+      <span style="font-size:16px;font-weight:700">${monthNames[month]} ${year}</span>
+      <button class="icon-btn" onclick="CalPage.nextMonth()">›</button>
+    </div>
+
+    <!-- WEEKDAY HEADERS -->
+    <div class="cal-grid" style="margin-bottom:4px">
+      ${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d => `<div style="text-align:center;font-size:10px;color:var(--text2);font-weight:600;padding:4px 0">${d}</div>`).join('')}
+    </div>
+
+    <!-- CALENDAR GRID -->
+    <div class="cal-grid cal-days">${cells}</div>
+
+    <!-- SELECTED DAY or LIST -->
+    <div id="cal-day-detail"></div>
+
+    <!-- UPCOMING -->
+    <div class="section-label" style="margin-top:16px">Próximos eventos</div>
+    <div id="cal-upcoming"></div>
+    <div style="height:20px"></div>
+  `;
+
+  CalPage.renderUpcoming(tasks, orders);
+};
+
+const CalPage = {
+  selectDay(d) {
+    window._calSelectedDay = d;
+    const tasks = DB.get('tasks') || [];
+    const orders = DB.get('orders') || [];
+    const year = window._calYear || new Date().getFullYear();
+    const month = window._calMonth !== undefined ? window._calMonth : new Date().getMonth();
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+    const dayTasks = tasks.filter(t => t.date === dateStr);
+    const dayOrders = orders.filter(o => o.shipDate === dateStr || o.date === dateStr);
+
+    const el = $('cal-day-detail');
+    if (!el) return;
+
+    if (!dayTasks.length && !dayOrders.length) {
+      el.innerHTML = `
+        <div class="card" style="margin-top:12px">
+          <div class="card-body" style="text-align:center;color:var(--text2);font-size:13px">
+            Sin eventos el ${d}/${month+1}/${year}
+            <div style="margin-top:10px">
+              <button class="btn btn-primary btn-sm" onclick="Drawers.newTaskForDate('${dateStr}')">+ Nueva tarea para este día</button>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="section-label" style="margin-top:12px">Día ${d} · ${String(month+1).padStart(2,'0')}/${year}</div>
+      <div class="card">
+        <div class="card-body" style="padding:4px 14px">
+          ${dayTasks.map(t => `
+            <div class="list-item">
+              <div style="font-size:20px;cursor:pointer" onclick="Tasks.toggle('${t.id}');CalPage.selectDay(${d})">${t.done?'✅':'⬜'}</div>
+              <div class="list-item-info">
+                <div class="list-item-title" style="${t.done?'text-decoration:line-through;color:var(--text2)':''}">${t.title}</div>
+                <div class="list-item-sub">${t.time||''}${t.desc?' · '+t.desc:''}</div>
+              </div>
+              <button class="icon-btn" style="width:28px;height:28px;font-size:12px" onclick="Tasks.delete('${t.id}');Pages.calendar()">✕</button>
+            </div>
+          `).join('')}
+          ${dayOrders.map(o => `
+            <div class="list-item" onclick="Modals.orderDetail('${o.id}')">
+              <div class="list-item-icon">${o.shipDate===dateStr?'🚚':'🛒'}</div>
+              <div class="list-item-info">
+                <div class="list-item-title">${o.client||'Sin nombre'}</div>
+                <div class="list-item-sub">${o.shipDate===dateStr?'Fecha envío':'Fecha pedido'} · ${statusLabel(o.status)}</div>
+              </div>
+              <div class="list-item-right"><span class="status ${statusClass(o.status)}">${statusLabel(o.status)}</span></div>
+            </div>
+          `).join('')}
+          <div style="padding:8px 0">
+            <button class="btn btn-secondary btn-sm" onclick="Drawers.newTaskForDate('${dateStr}')">+ Tarea para este día</button>
+          </div>
+        </div>
+      </div>`;
+  },
+
+  renderUpcoming(tasks, orders) {
+    const el = $('cal-upcoming');
+    if (!el) return;
+    const todayStr = today();
+    const upcoming = [
+      ...tasks.filter(t => !t.done && t.date >= todayStr).map(t => ({ date: t.date, type: 'task', label: t.title, sub: t.time||'', id: t.id, done: t.done })),
+      ...orders.filter(o => o.shipDate >= todayStr && ['pending','preparing','ready'].includes(o.status)).map(o => ({ date: o.shipDate, type: 'order', label: '📦 Envío: ' + (o.client||''), sub: statusLabel(o.status), id: o.id }))
+    ].sort((a,b) => a.date > b.date ? 1 : -1).slice(0, 8);
+
+    if (!upcoming.length) {
+      el.innerHTML = `<div class="card"><div class="card-body" style="color:var(--text2);font-size:13px;text-align:center">Sin eventos próximos 🎉</div></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="card"><div class="card-body" style="padding:4px 14px">
+      ${upcoming.map(ev => `
+        <div class="list-item" onclick="${ev.type==='order'?`Modals.orderDetail('${ev.id}')`:`Drawers.editTask('${ev.id}')`}">
+          <div class="list-item-icon">${ev.type==='task'?(ev.done?'✅':'📌'):'🚚'}</div>
+          <div class="list-item-info">
+            <div class="list-item-title">${ev.label}</div>
+            <div class="list-item-sub">${fmtDateFull(ev.date)}${ev.sub?' · '+ev.sub:''}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div></div>`;
+  },
+
+  prevMonth() {
+    let m = window._calMonth !== undefined ? window._calMonth : new Date().getMonth();
+    let y = window._calYear || new Date().getFullYear();
+    m--; if (m < 0) { m = 11; y--; }
+    window._calMonth = m; window._calYear = y;
+    Pages.calendar();
+  },
+
+  nextMonth() {
+    let m = window._calMonth !== undefined ? window._calMonth : new Date().getMonth();
+    let y = window._calYear || new Date().getFullYear();
+    m++; if (m > 11) { m = 0; y++; }
+    window._calMonth = m; window._calYear = y;
+    Pages.calendar();
+  }
+};
+
+// ---- MORE PAGE ----
+Pages.more = function() {
+  $('page-title').textContent = 'Más';
+  $('topbar-actions').innerHTML = '';
+
+  $('page-content').innerHTML = `
+    <div style="height:12px"></div>
+    
+    <div class="section-label">Herramientas</div>
+    <div class="card">
+      <div class="card-body" style="padding:4px 14px">
+        <div class="settings-row" onclick="Pages.calculator()">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#1a1e2e">🧮</div>
+            <div>
+              <div class="settings-row-title">Calculadora</div>
+              <div class="settings-row-sub">Calcula pedidos y precios</div>
+            </div>
+          </div>
+          <span style="color:var(--text2)">›</span>
+        </div>
+        <div class="settings-row" onclick="Pages.notes()">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#1a2b1a">📝</div>
+            <div>
+              <div class="settings-row-title">Notas</div>
+              <div class="settings-row-sub">Ideas y recordatorios</div>
+            </div>
+          </div>
+          <span style="color:var(--text2)">›</span>
+        </div>
+        <div class="settings-row" onclick="App.navigate('calendar')">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#2b1a1a">📅</div>
+            <div>
+              <div class="settings-row-title">Agenda / Calendario</div>
+              <div class="settings-row-sub">Tareas, recordatorios y entregas</div>
+            </div>
+          </div>
+          <span style="color:var(--text2)">›</span>
+        </div>
+        <div class="settings-row" onclick="Pages.goal()">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#1a1a2b">🎯</div>
+            <div>
+              <div class="settings-row-title">Objetivo de ahorro</div>
+              <div class="settings-row-sub">Seguimiento de meta 500€</div>
+            </div>
+          </div>
+          <span style="color:var(--text2)">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Configuración</div>
+    <div class="card">
+      <div class="card-body" style="padding:4px 14px">
+        <div class="settings-row" onclick="Pages.settings()">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#2a1e2e">⚙️</div>
+            <div>
+              <div class="settings-row-title">Ajustes generales</div>
+              <div class="settings-row-sub">Precios, márgenes, distribución</div>
+            </div>
+          </div>
+          <span style="color:var(--text2)">›</span>
+        </div>
+        <div class="settings-row" onclick="Pages.discounts()">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#1e2a1e">🏷️</div>
+            <div>
+              <div class="settings-row-title">Descuentos</div>
+              <div class="settings-row-sub">Tramos y reglas de descuento</div>
+            </div>
+          </div>
+          <span style="color:var(--text2)">›</span>
+        </div>
+        <div class="settings-row" onclick="DataIO.showOptions()">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#1e1e2a">💾</div>
+            <div>
+              <div class="settings-row-title">Datos</div>
+              <div class="settings-row-sub">Exportar / importar copia de seguridad</div>
+            </div>
+          </div>
+          <span style="color:var(--text2)">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:20px"></div>
+  `;
+};
+
+// ---- SETTINGS PAGE ----
+Pages.settings = function() {
+  const s = DB.get('settings');
+  App.openModal('Ajustes', `
+    <div style="height:8px"></div>
+    
+    <div class="section-label">Tamaños y precios</div>
+    <div id="sizes-list"></div>
+    <button class="btn btn-secondary btn-sm" onclick="Settings.addSize()" style="margin-top:8px">+ Añadir tamaño</button>
+
+    <div class="section-label" style="margin-top:20px">Distribución del beneficio</div>
+    <div id="dist-list"></div>
+    <div style="font-size:11px;color:var(--text2);margin-top:6px">Total: <span id="dist-total"></span></div>
+
+    <div class="section-label" style="margin-top:20px">Objetivo de ahorro</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cantidad (€)</label>
+        <input class="form-input" type="number" id="goal-amount" value="${s.goalAmount||500}" oninput="Settings.save()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha límite</label>
+        <input class="form-input" type="date" id="goal-date" value="${s.goalDate||'2027-05-31'}" oninput="Settings.save()">
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px">Categorías de catálogo</div>
+    <div id="cats-list"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input class="form-input" id="new-cat-input" placeholder="Nueva categoría..." style="flex:1">
+      <button class="btn btn-primary btn-sm" onclick="Settings.addCat()">Añadir</button>
+    </div>
+
+    <div style="height:24px"></div>
+  `);
+
+  Settings.renderSizes();
+  Settings.renderDist();
+  Settings.renderCats();
+};
+
+const Settings = {
+  renderSizes() {
+    const s = DB.get('settings');
+    const el = $('sizes-list');
+    if (!el) return;
+    el.innerHTML = s.sizes.map((sz, i) => `
+      <div class="card" style="margin-bottom:8px">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <input class="form-input" value="${sz.name}" oninput="Settings.updateSize(${i},'name',this.value)" style="width:80px;font-weight:700">
+            <button class="btn btn-danger btn-sm" onclick="Settings.removeSize(${i})">Eliminar</button>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Precio venta (€)</label>
+              <input class="form-input" type="number" step="0.01" value="${sz.price}" oninput="Settings.updateSize(${i},'price',this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Coste marco (€)</label>
+              <input class="form-input" type="number" step="0.01" value="${sz.costFrame}" oninput="Settings.updateSize(${i},'costFrame',this.value)">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Coste impresión (€)</label>
+              <input class="form-input" type="number" step="0.01" value="${sz.costPrint}" oninput="Settings.updateSize(${i},'costPrint',this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Coste total (€)</label>
+              <input class="form-input" value="${(sz.costFrame + sz.costPrint).toFixed(2)}" readonly style="color:var(--text2)">
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">
+            Beneficio: ${fmt(sz.price - sz.costFrame - sz.costPrint)} · 
+            Margen: ${fmtPct(sz.price > 0 ? (sz.price - sz.costFrame - sz.costPrint)/sz.price*100 : 0)}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  updateSize(i, field, val) {
+    const s = DB.get('settings');
+    if (['price','costFrame','costPrint'].includes(field)) s.sizes[i][field] = parseFloat(val) || 0;
+    else s.sizes[i][field] = val;
+    DB.set('settings', s);
+    this.renderSizes();
+  },
+
+  addSize() {
+    const s = DB.get('settings');
+    s.sizes.push({ id: uid(), name: 'Nuevo', price: 10, costFrame: 2, costPrint: 0.50 });
+    DB.set('settings', s);
+    this.renderSizes();
+  },
+
+  removeSize(i) {
+    const s = DB.get('settings');
+    if (s.sizes.length <= 1) { App.toast('Necesitas al menos un tamaño', 'error'); return; }
+    s.sizes.splice(i, 1);
+    DB.set('settings', s);
+    this.renderSizes();
+  },
+
+  renderDist() {
+    const s = DB.get('settings');
+    const el = $('dist-list');
+    if (!el) return;
+    const total = s.distribution.reduce((a, d) => a + d.pct, 0);
+    el.innerHTML = s.distribution.map((d, i) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <input class="form-input" style="width:36px;padding:8px 6px;text-align:center" value="${d.emoji}" oninput="Settings.updateDist(${i},'emoji',this.value)">
+        <input class="form-input" style="flex:1" value="${d.label}" oninput="Settings.updateDist(${i},'label',this.value)">
+        <div style="display:flex;align-items:center;gap:4px">
+          <input class="form-input" style="width:56px" type="number" value="${d.pct}" oninput="Settings.updateDist(${i},'pct',this.value)">
+          <span style="color:var(--text2);font-size:13px">%</span>
+        </div>
+        <button class="icon-btn" onclick="Settings.removeDist(${i})">✕</button>
+      </div>
+    `).join('');
+    const totEl = $('dist-total');
+    if (totEl) totEl.textContent = total + '% ' + (total === 100 ? '✓' : '(debe ser 100%)');
+  },
+
+  updateDist(i, field, val) {
+    const s = DB.get('settings');
+    if (field === 'pct') s.distribution[i].pct = parseFloat(val) || 0;
+    else s.distribution[i][field] = val;
+    DB.set('settings', s);
+    this.renderDist();
+  },
+
+  removeDist(i) {
+    const s = DB.get('settings');
+    s.distribution.splice(i, 1);
+    DB.set('settings', s);
+    this.renderDist();
+  },
+
+  renderCats() {
+    const s = DB.get('settings');
+    const el = $('cats-list');
+    if (!el) return;
+    el.innerHTML = `<div class="chip-row">
+      ${s.categories.map((c, i) => `
+        <div class="chip active" style="display:flex;align-items:center;gap:4px">
+          ${c}
+          <button style="background:none;border:none;color:white;cursor:pointer;font-size:12px;line-height:1" onclick="Settings.removeCat(${i})">✕</button>
+        </div>
+      `).join('')}
+    </div>`;
+  },
+
+  addCat() {
+    const input = $('new-cat-input');
+    if (!input || !input.value.trim()) return;
+    const s = DB.get('settings');
+    s.categories.push(input.value.trim());
+    DB.set('settings', s);
+    input.value = '';
+    this.renderCats();
+  },
+
+  removeCat(i) {
+    const s = DB.get('settings');
+    s.categories.splice(i, 1);
+    DB.set('settings', s);
+    this.renderCats();
+  },
+
+  save() {
+    const s = DB.get('settings');
+    const goalAmt = $('goal-amount');
+    const goalDt = $('goal-date');
+    if (goalAmt) s.goalAmount = parseFloat(goalAmt.value) || 500;
+    if (goalDt) s.goalDate = goalDt.value;
+    DB.set('settings', s);
+  }
+};
+
+// ---- DISCOUNTS PAGE ----
+Pages.discounts = function() {
+  const s = DB.get('settings');
+  const disc = s.discounts;
+  
+  App.openModal('Descuentos', `
+    <div style="height:8px"></div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-body">
+        <div class="toggle-wrap">
+          <div>
+            <div class="toggle-label">Sistema de descuentos</div>
+            <div class="toggle-sub">Aplicar automáticamente en pedidos</div>
+          </div>
+          <div class="toggle ${disc.enabled?'on':''}" id="disc-toggle" onclick="DiscountSettings.toggle()"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Tramos de descuento</div>
+    <div id="disc-rules"></div>
+    <button class="btn btn-secondary btn-sm" onclick="DiscountSettings.addRule()" style="margin-top:8px">+ Añadir tramo</button>
+
+    <div class="section-label" style="margin-top:20px">Vista previa</div>
+    <div class="card">
+      <div class="card-body" style="font-size:13px;color:var(--text2)">
+        Se aplica el tramo más alto alcanzado. Los descuentos no se acumulan.
+      </div>
+    </div>
+    <div style="height:24px"></div>
+  `);
+  DiscountSettings.renderRules();
+};
+
+const DiscountSettings = {
+  toggle() {
+    const s = DB.get('settings');
+    s.discounts.enabled = !s.discounts.enabled;
+    DB.set('settings', s);
+    $('disc-toggle').classList.toggle('on', s.discounts.enabled);
+  },
+  renderRules() {
+    const s = DB.get('settings');
+    const el = $('disc-rules');
+    if (!el) return;
+    el.innerHTML = s.discounts.rules.map((r, i) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap">A partir de</span>
+        <input class="form-input" type="number" value="${r.min}" oninput="DiscountSettings.update(${i},'min',this.value)" style="width:72px">
+        <span style="font-size:12px;color:var(--text2)">€ →</span>
+        <input class="form-input" type="number" value="${r.pct}" oninput="DiscountSettings.update(${i},'pct',this.value)" style="width:56px">
+        <span style="font-size:12px;color:var(--text2)">%</span>
+        <button class="icon-btn" onclick="DiscountSettings.remove(${i})">✕</button>
+      </div>
+    `).join('');
+  },
+  update(i, field, val) {
+    const s = DB.get('settings');
+    s.discounts.rules[i][field] = parseFloat(val) || 0;
+    DB.set('settings', s);
+    this.renderRules();
+  },
+  addRule() {
+    const s = DB.get('settings');
+    s.discounts.rules.push({ min: 50, pct: 10 });
+    DB.set('settings', s);
+    this.renderRules();
+  },
+  remove(i) {
+    const s = DB.get('settings');
+    s.discounts.rules.splice(i, 1);
+    DB.set('settings', s);
+    this.renderRules();
+  }
+};
+
+// ---- CALCULATOR PAGE ----
+Pages.calculator = function() {
+  const s = DB.get('settings');
+  let items = [{ sizeId: s.sizes[0]?.id || 'a3', qty: 1 }];
+
+  App.openModal('Calculadora', '');
+  
+  function renderCalc() {
+    const totals = calcOrderTotals(items.map(item => {
+      const sz = getSizeById(item.sizeId);
+      return { sizeId: item.sizeId, qty: item.qty, priceSnapshot: sz?.price, costSnapshot: (sz?.costFrame||0)+(sz?.costPrint||0) };
+    }));
+
+    $('modal-body').innerHTML = `
+      <div style="height:8px"></div>
+      <div class="section-label">Productos del pedido</div>
+      ${items.map((item, idx) => {
+        const sz = getSizeById(item.sizeId);
+        const lineTotal = (sz?.price||0) * item.qty;
+        const lineCost = ((sz?.costFrame||0)+(sz?.costPrint||0)) * item.qty;
+        return `
+        <div class="card" style="margin-bottom:8px">
+          <div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <select class="form-select" style="flex:1;margin-right:8px" onchange="calcSetSize(${idx},this.value)">
+                ${s.sizes.map(sz2 => `<option value="${sz2.id}" ${sz2.id===item.sizeId?'selected':''}>${sz2.name} · ${fmt(sz2.price)}/ud</option>`).join('')}
+              </select>
+              ${items.length > 1 ? `<button class="icon-btn" onclick="calcRemove(${idx})">✕</button>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="qty-stepper">
+                <button class="qty-btn" onclick="calcQty(${idx},-1)">−</button>
+                <input class="qty-val" type="number" value="${item.qty}" min="1" onchange="calcSetQty(${idx},this.value)">
+                <button class="qty-btn" onclick="calcQty(${idx},+1)">+</button>
+              </div>
+              <div style="flex:1;font-size:13px;color:var(--text2)">
+                ${item.qty} × ${fmt(sz?.price||0)} = <strong style="color:var(--text)">${fmt(lineTotal)}</strong><br>
+                Beneficio: <span style="color:var(--green)">${fmt(lineTotal - lineCost)}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+      
+      <button class="btn btn-secondary btn-full" onclick="calcAdd()" style="margin-bottom:16px">+ Añadir otro tamaño</button>
+
+      <div class="section-label">Resumen</div>
+      <div class="card">
+        <div class="card-body">
+          ${items.map(item => {
+            const sz = getSizeById(item.sizeId);
+            return `<div class="calc-row"><span class="label">${item.qty} × ${sz?.name||''}</span><span class="value">${fmt((sz?.price||0)*item.qty)}</span></div>`;
+          }).join('')}
+          <div class="divider"></div>
+          ${totals.discPct > 0 ? `
+            <div class="calc-row"><span class="label">Precio normal</span><span class="value">${fmt(totals.price)}</span></div>
+            <div class="calc-row"><span class="label">Descuento (${totals.discPct}%)</span><span class="value red">−${fmt(totals.discAmt)}</span></div>
+          ` : ''}
+          <div class="calc-row total"><span class="label">Precio final</span><span class="value accent">${fmt(totals.finalPrice)}</span></div>
+          <div class="calc-row"><span class="label">Coste producción</span><span class="value red">−${fmt(totals.cost)}</span></div>
+          <div class="calc-row"><span class="label">Beneficio</span><span class="value green">+${fmt(totals.profit)}</span></div>
+          <div class="calc-row"><span class="label">Margen</span><span class="value">${fmtPct(totals.margin)}</span></div>
+        </div>
+      </div>
+      
+      <div style="margin-top:12px">
+        <button class="btn btn-primary btn-full" onclick="calcToOrder()">📦 Crear pedido con esto</button>
+      </div>
+      <div style="height:24px"></div>
+    `;
+  }
+
+  window.calcSetSize = (i, v) => { items[i].sizeId = v; renderCalc(); };
+  window.calcQty = (i, d) => { items[i].qty = Math.max(1, items[i].qty + d); renderCalc(); };
+  window.calcSetQty = (i, v) => { items[i].qty = Math.max(1, parseInt(v)||1); renderCalc(); };
+  window.calcAdd = () => { items.push({ sizeId: s.sizes[0]?.id || 'a4', qty: 1 }); renderCalc(); };
+  window.calcRemove = (i) => { items.splice(i, 1); renderCalc(); };
+  window.calcToOrder = () => { 
+    App.closeModal();
+    setTimeout(() => Drawers.newOrder(items), 200);
+  };
+
+  renderCalc();
+};
+
+// ---- NOTES PAGE ----
+Pages.notes = function() {
+  App.openModal('Notas', '');
+  
+  function render() {
+    const notes = (DB.get('notes') || []).sort((a,b) => b.createdAt > a.createdAt ? 1 : -1);
+    $('modal-body').innerHTML = `
+      <div style="height:8px"></div>
+      <button class="btn btn-primary btn-full" onclick="Drawers.newNote(true)" style="margin-bottom:12px">+ Nueva nota</button>
+      ${notes.length ? `
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${notes.map(n => `
+            <div class="card" onclick="Notes.edit('${n.id}')">
+              <div class="card-body">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+                  <div style="font-weight:700;font-size:14px;flex:1">${n.title || 'Sin título'}</div>
+                  <div style="font-size:11px;color:var(--text2);flex-shrink:0;margin-left:8px">${fmtDate(n.date)}</div>
+                </div>
+                ${n.category ? `<span class="cat-tag" style="margin-bottom:6px;display:inline-block">${n.category}</span>` : ''}
+                ${n.text ? `<div style="font-size:13px;color:var(--text2);line-height:1.5;white-space:pre-wrap;max-height:60px;overflow:hidden">${n.text}</div>` : ''}
+                ${n.images && n.images.length ? `<div class="img-thumbs" style="margin-top:8px">${n.images.map(img => imgToThumb(img)).join('')}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<div class="empty-state"><div class="emoji">📝</div><p>Sin notas todavía.<br>Añade tu primera nota.</p></div>`}
+      <div style="height:24px"></div>
+    `;
+  }
+
+  render();
+};
+
+const Notes = {
+  edit(id) {
+    const notes = DB.get('notes') || [];
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    const s = DB.get('settings');
+    
+    App.openDrawer('Editar nota', `
+      <div class="form-group">
+        <label class="form-label">Título</label>
+        <input class="form-input" id="note-title" value="${note.title || ''}" placeholder="Título de la nota">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-select" id="note-cat">
+          <option value="">Sin categoría</option>
+          ${s.categories.map(c => `<option value="${c}" ${c===note.category?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Texto</label>
+        <textarea class="form-textarea" id="note-text" style="height:120px">${note.text || ''}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Imágenes</label>
+        <div id="note-imgs">${(note.images||[]).map(img => `<div class="img-thumb-wrap"><img class="img-thumb" src="${img}" onclick="App.lightbox('${img}')"><button class="img-thumb-del" onclick="Notes.delImg('${id}','${img.substr(0,30)}')">✕</button></div>`).join('')}</div>
+        <label class="img-upload-area" style="margin-top:8px;display:block">
+          📷 Toca para añadir imagen
+          <input type="file" accept="image/*" multiple style="display:none" onchange="Notes.addImg('${id}',this)">
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary btn-full" onclick="Notes.save('${id}')">Guardar</button>
+        <button class="btn btn-danger" onclick="Notes.delete('${id}')">🗑️</button>
+      </div>
+    `);
+  },
+
+  async addImg(id, input) {
+    const notes = DB.get('notes') || [];
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    const imgs = await handleImgUpload(input, note.images || []);
+    note.images = imgs;
+    DB.set('notes', notes);
+    this.edit(id);
+  },
+
+  delImg(id, prefix) {
+    const notes = DB.get('notes') || [];
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    note.images = (note.images||[]).filter(img => !img.startsWith(prefix));
+    DB.set('notes', notes);
+    this.edit(id);
+  },
+
+  save(id) {
+    const notes = DB.get('notes') || [];
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    note.title = $('note-title')?.value || '';
+    note.category = $('note-cat')?.value || '';
+    note.text = $('note-text')?.value || '';
+    DB.set('notes', notes);
+    App.forceCloseDrawer();
+    App.toast('Nota guardada');
+    Pages.notes();
+  },
+
+  delete(id) {
+    if (!confirm('¿Eliminar esta nota?')) return;
+    let notes = DB.get('notes') || [];
+    notes = notes.filter(n => n.id !== id);
+    DB.set('notes', notes);
+    App.forceCloseDrawer();
+    App.toast('Nota eliminada');
+    Pages.notes();
+  }
+};
+
+// ---- AGENDA PAGE ----
+Pages.agenda = function() {
+  App.openModal('Agenda', '');
+  
+  function render() {
+    const tasks = (DB.get('tasks') || []).sort((a,b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return (a.date||'9') > (b.date||'9') ? 1 : -1;
+    });
+    const orders = (DB.get('orders') || []).filter(o => o.shipDate && ['pending','preparing','ready'].includes(o.status))
+      .sort((a,b) => a.shipDate > b.shipDate ? 1 : -1);
+
+    $('modal-body').innerHTML = `
+      <div style="height:8px"></div>
+      <button class="btn btn-primary btn-full" onclick="Drawers.newTask(true)" style="margin-bottom:12px">+ Nueva tarea</button>
+      
+      ${orders.length ? `
+        <div class="section-label">Envíos pendientes</div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-body" style="padding:4px 14px">
+            ${orders.map(o => `
+              <div class="list-item" onclick="Modals.orderDetail('${o.id}')">
+                <div class="list-item-icon">${statusEmoji(o.status)}</div>
+                <div class="list-item-info">
+                  <div class="list-item-title">${o.client || 'Sin nombre'}</div>
+                  <div class="list-item-sub">${statusLabel(o.status)} · Envío: ${fmtDate(o.shipDate)}</div>
+                </div>
+                <div class="list-item-right">
+                  <span class="status ${statusClass(o.status)}">${fmtDate(o.shipDate)}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="section-label">Tareas</div>
+      ${tasks.length ? `
+        <div class="card">
+          <div class="card-body" style="padding:4px 14px">
+            ${tasks.map(t => `
+              <div class="list-item">
+                <div style="font-size:22px;cursor:pointer" onclick="Tasks.toggle('${t.id}')">${t.done ? '✅' : '⬜'}</div>
+                <div class="list-item-info" onclick="Drawers.editTask('${t.id}')">
+                  <div class="list-item-title" style="${t.done ? 'text-decoration:line-through;color:var(--text2)' : ''}">${t.title}</div>
+                  <div class="list-item-sub">${t.date ? fmtDate(t.date) : 'Sin fecha'}${t.time ? ' · ' + t.time : ''}${t.desc ? ' · ' + t.desc : ''}</div>
+                </div>
+                <button class="icon-btn" onclick="Tasks.delete('${t.id}')">✕</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : `<div class="empty-state"><div class="emoji">📅</div><p>Sin tareas pendientes.<br>¡Estás al día!</p></div>`}
+      <div style="height:24px"></div>
+    `;
+  }
+
+  render();
+};
+
+const Tasks = {
+  toggle(id) {
+    const tasks = DB.get('tasks') || [];
+    const t = tasks.find(t => t.id === id);
+    if (t) { t.done = !t.done; DB.set('tasks', tasks); }
+    App.navigate(App.currentPage);
+    App.updateBadge();
+  },
+  delete(id) {
+    let tasks = DB.get('tasks') || [];
+    tasks = tasks.filter(t => t.id !== id);
+    DB.set('tasks', tasks);
+    Pages.agenda();
+    App.toast('Tarea eliminada');
+  }
+};
+
+// ---- GOAL PAGE ----
+Pages.goal = function() {
+  const s = DB.get('settings');
+  const contribs = (DB.get('goalContributions') || []).sort((a,b) => b.date > a.date ? 1 : -1);
+  const total = contribs.reduce((a, c) => a + c.amount, 0);
+  const goal = s.goalAmount || 500;
+  const pct = Math.min(100, total / goal * 100);
+  
+  App.openModal('Objetivo de ahorro', `
+    <div style="height:8px"></div>
+    
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-body">
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Meta: ${fmt(goal)} · ${fmtDateFull(s.goalDate)}</div>
+          <div style="font-size:40px;font-weight:800;color:var(--accent)">${fmt(total)}</div>
+          <div style="font-size:14px;color:var(--text2);margin-top:4px">${fmtPct(pct)} completado</div>
+        </div>
+        <div class="progress-wrap" style="height:12px;margin-bottom:8px">
+          <div class="progress-bar" style="width:${pct}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2)">
+          <span>0€</span>
+          <span>Faltan ${fmt(Math.max(0, goal - total))}</span>
+          <span>${fmt(goal)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Añadir dinero al objetivo</div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-body">
+        <div class="form-row" style="margin-bottom:8px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Cantidad (€)</label>
+            <input class="form-input" id="contrib-amount" type="number" step="0.01" placeholder="Ej: 50">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Fecha</label>
+            <input class="form-input" id="contrib-date" type="date" value="${today()}">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label class="form-label">Concepto (opcional)</label>
+          <input class="form-input" id="contrib-note" placeholder="Ej: Ventas de esta semana, saldo inicial...">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="Goal.add()">+ Añadir al objetivo</button>
+      </div>
+    </div>
+
+    <div class="section-label">Historial de aportaciones</div>
+    ${contribs.length ? `
+      <div class="card">
+        <div class="card-body" style="padding:4px 14px">
+          ${contribs.map(c => `
+            <div class="list-item">
+              <div class="list-item-icon">💰</div>
+              <div class="list-item-info">
+                <div class="list-item-title">${c.note || 'Aportación'}</div>
+                <div class="list-item-sub">${fmtDateFull(c.date)}</div>
+              </div>
+              <div class="list-item-right" style="display:flex;align-items:center;gap:6px">
+                <div class="list-item-amount green">+${fmt(c.amount)}</div>
+                <button class="icon-btn" style="width:28px;height:28px;font-size:12px" onclick="Goal.delete('${c.id}')">✕</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : `<div class="empty-state"><div class="emoji">🎯</div><p>Sin aportaciones todavía.<br>Añade tu saldo inicial arriba.</p></div>`}
+    <div style="height:24px"></div>
+  `);
+};
+
+const Goal = {
+  add() {
+    const amt = parseFloat($('contrib-amount')?.value);
+    const date = $('contrib-date')?.value;
+    const note = $('contrib-note')?.value?.trim() || '';
+    if (!amt || amt <= 0) { App.toast('Introduce una cantidad válida', 'error'); return; }
+    const contribs = DB.get('goalContributions') || [];
+    contribs.push({ id: uid(), amount: amt, date: date || today(), note });
+    DB.set('goalContributions', contribs);
+    App.toast('Aportación registrada');
+    Pages.goal();
+  },
+  delete(id) {
+    if (!confirm('¿Eliminar esta aportación?')) return;
+    let contribs = DB.get('goalContributions') || [];
+    contribs = contribs.filter(c => c.id !== id);
+    DB.set('goalContributions', contribs);
+    App.toast('Aportación eliminada');
+    Pages.goal();
+  }
+};
+
+// =============================================
+// DRAWERS (bottom sheets for create/edit)
+// =============================================
+const Drawers = {
+  newOrder(prefillItems = null) {
+    const s = DB.get('settings');
+    // items ahora llevan customPrice opcional
+    let items = prefillItems ? prefillItems.map(i => ({...i, customPrice: null})) : [{ sizeId: s.sizes[0]?.id || 'a4', qty: 1, customPrice: null }];
+    let orderImages = [];
+    let savedClient = '', savedDate = today(), savedShip = '', savedStatus = 'pending', savedNotes = '';
+
+    const calcItemsForTotals = () => items.map(item => {
+      const sz = getSizeById(item.sizeId);
+      const unitPrice = item.customPrice !== null ? item.customPrice : (sz?.price || 0);
+      const unitCost = (sz?.costFrame||0) + (sz?.costPrint||0);
+      return { sizeId: item.sizeId, qty: item.qty, priceSnapshot: unitPrice, costSnapshot: unitCost };
+    });
+
+    const renderForm = () => {
+      // Guardar valores actuales antes de re-renderizar
+      if ($('o-client')) savedClient = $('o-client').value;
+      if ($('o-date')) savedDate = $('o-date').value;
+      if ($('o-ship')) savedShip = $('o-ship').value;
+      if ($('o-status')) savedStatus = $('o-status').value;
+      if ($('o-notes')) savedNotes = $('o-notes').value;
+
+      const totals = calcOrderTotals(calcItemsForTotals());
+      
+      $('drawer-body').innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Cliente</label>
+          <input class="form-input" id="o-client" placeholder="Nombre del cliente" value="${savedClient}">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Fecha pedido</label>
+            <input class="form-input" type="date" id="o-date" value="${savedDate}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha envío</label>
+            <input class="form-input" type="date" id="o-ship" value="${savedShip}">
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:4px">Productos</div>
+        ${items.map((item, idx) => {
+          const sz = getSizeById(item.sizeId);
+          const defaultPrice = sz?.price || 0;
+          const effectivePrice = item.customPrice !== null ? item.customPrice : defaultPrice;
+          const unitCost = (sz?.costFrame||0)+(sz?.costPrint||0);
+          const lineProfit = (effectivePrice - unitCost) * item.qty;
+          return `
+          <div class="card" style="margin-bottom:8px">
+            <div class="card-body" style="padding:10px 12px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+                <select class="form-select" style="flex:1" onchange="orderSetSize(${idx},this.value)">
+                  ${s.sizes.map(sz2 => `<option value="${sz2.id}" ${sz2.id===item.sizeId?'selected':''}>${sz2.name}</option>`).join('')}
+                </select>
+                ${items.length > 1 ? `<button class="icon-btn" onclick="orderRemoveItem(${idx})">✕</button>` : ''}
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <div class="qty-stepper" style="flex-shrink:0">
+                  <button class="qty-btn" onclick="orderQty(${idx},-1)">−</button>
+                  <input class="qty-val" type="number" value="${item.qty}" min="1" onchange="orderSetQty(${idx},this.value)">
+                  <button class="qty-btn" onclick="orderQty(${idx},+1)">+</button>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Precio/ud (normal: ${fmt(defaultPrice)})</div>
+                  <input class="form-input" type="number" step="0.01"
+                    value="${effectivePrice}"
+                    style="padding:7px 10px;font-size:14px;font-weight:600;color:var(--accent)"
+                    oninput="orderSetPrice(${idx},this.value)"
+                    placeholder="${defaultPrice}">
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">
+                <span>Coste: ${fmt(unitCost)}/ud</span>
+                <span>Marco: ${fmt(sz?.costFrame||0)} · Impresión: ${fmt(sz?.costPrint||0)}</span>
+                <span style="color:var(--green)">B: ${fmt(lineProfit)}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+        <button class="btn btn-secondary btn-sm" onclick="orderAddItem()" style="margin-bottom:4px">+ Añadir tamaño</button>
+
+        <div class="card" style="margin:10px 0 14px">
+          <div class="card-body">
+            ${items.map(item => {
+              const sz = getSizeById(item.sizeId);
+              const ep = item.customPrice !== null ? item.customPrice : (sz?.price||0);
+              return `<div class="calc-row"><span class="label">${item.qty} × ${sz?.name||''} · ${fmt(ep)}/ud</span><span class="value">${fmt(ep*item.qty)}</span></div>`;
+            }).join('')}
+            <div class="divider"></div>
+            ${totals.discPct > 0 ? `
+              <div class="calc-row"><span class="label">Descuento ${totals.discPct}%</span><span class="value red">−${fmt(totals.discAmt)}</span></div>
+            ` : ''}
+            <div class="calc-row total"><span class="label">Precio final</span><span class="value accent">${fmt(totals.finalPrice)}</span></div>
+            <div class="calc-row"><span class="label">Coste producción</span><span class="value red">−${fmt(totals.cost)}</span></div>
+            <div class="calc-row"><span class="label">Beneficio</span><span class="value green">${fmt(totals.profit)}</span></div>
+            <div class="calc-row"><span class="label">Margen</span><span class="value">${totals.finalPrice > 0 ? ((totals.profit/totals.finalPrice)*100).toFixed(1)+'%' : '—'}</span></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-select" id="o-status">
+            ${['pending','preparing','ready','sent','delivered','cancelled'].map(st => 
+              `<option value="${st}" ${st===savedStatus?'selected':''}>${statusLabel(st)}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notas</label>
+          <textarea class="form-textarea" id="o-notes" placeholder="Notas del pedido...">${savedNotes}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Imágenes</label>
+          <label class="img-upload-area">
+            📷 Añadir imágenes del pedido
+            <input type="file" accept="image/*" multiple style="display:none" id="o-imgs-input">
+          </label>
+          <div id="o-imgs-preview" class="img-thumbs" style="margin-top:8px">
+            ${orderImages.map(img => `<div class="img-thumb-wrap"><img class="img-thumb" src="${img}"></div>`).join('')}
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="orderSave()">Crear pedido</button>
+        <div style="height:12px"></div>
+      `;
+
+      window.orderSetSize = (i, v) => { items[i].sizeId = v; items[i].customPrice = null; renderForm(); };
+      window.orderQty = (i, d) => { items[i].qty = Math.max(1, items[i].qty + d); renderForm(); };
+      window.orderSetQty = (i, v) => { items[i].qty = Math.max(1, parseInt(v)||1); renderForm(); };
+      window.orderSetPrice = (i, v) => { items[i].customPrice = parseFloat(v) || 0; };
+      window.orderAddItem = () => { items.push({ sizeId: s.sizes[0]?.id, qty: 1, customPrice: null }); renderForm(); };
+      window.orderRemoveItem = (i) => { items.splice(i, 1); renderForm(); };
+    };
+
+    window.orderSave = async () => {
+      if ($('o-client')) savedClient = $('o-client').value;
+      if ($('o-date')) savedDate = $('o-date').value;
+      if ($('o-ship')) savedShip = $('o-ship').value;
+      if ($('o-status')) savedStatus = $('o-status').value;
+      if ($('o-notes')) savedNotes = $('o-notes').value;
+
+      const imgInput = $('o-imgs-input');
+      if (imgInput && imgInput.files.length) {
+        orderImages = await handleImgUpload(imgInput, orderImages);
+      }
+
+      const snap = calcItemsForTotals().map((item, idx) => {
+        const sz = getSizeById(item.sizeId);
+        return {
+          sizeId: item.sizeId,
+          sizeName: sz?.name || item.sizeId,
+          qty: item.qty,
+          priceSnapshot: item.priceSnapshot,
+          costSnapshot: item.costSnapshot,
+          costFrame: sz?.costFrame || 0,
+          costPrint: sz?.costPrint || 0,
+          isCustomPrice: items[idx].customPrice !== null
+        };
+      });
+      const totals = calcOrderTotals(snap);
+
+      const order = {
+        id: uid(),
+        createdAt: new Date().toISOString(),
+        client: savedClient,
+        date: savedDate || today(),
+        shipDate: savedShip,
+        items: snap,
+        price: totals.price,
+        discPct: totals.discPct,
+        discAmt: totals.discAmt,
+        finalPrice: totals.finalPrice,
+        cost: totals.cost,
+        profit: totals.profit,
+        margin: totals.finalPrice > 0 ? (totals.profit/totals.finalPrice)*100 : 0,
+        status: savedStatus || 'pending',
+        notes: savedNotes,
+        images: orderImages
+      };
+
+      const orders = DB.get('orders') || [];
+      orders.push(order);
+      DB.set('orders', orders);
+      App.forceCloseDrawer();
+      App.toast('Pedido creado');
+      App.navigate('orders');
+      App.updateBadge();
+    };
+
+    App.openDrawer('Nuevo pedido', '');
+    renderForm();
+  },
+
+  newExpense() {
+    const cats = ['Marcos','Papel','Cartulina','Tinta','Embalaje','Burbuja','Cartón','Herramientas','Envío','Otros'];
+    App.openDrawer('Nuevo gasto', `
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-select" id="exp-cat">
+          ${cats.map(c => `<option>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <input class="form-input" id="exp-desc" placeholder="Descripción del gasto">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Precio unitario (€)</label>
+          <input class="form-input" type="number" step="0.01" id="exp-price" placeholder="0.00" oninput="expCalc()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cantidad</label>
+          <input class="form-input" type="number" id="exp-qty" value="1" oninput="expCalc()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Total</label>
+        <input class="form-input" id="exp-total" placeholder="0.00" readonly style="color:var(--red);font-weight:700">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input class="form-input" type="date" id="exp-date" value="${today()}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nota</label>
+        <input class="form-input" id="exp-note" placeholder="Nota opcional">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Imagen (ticket, etc.)</label>
+        <label class="img-upload-area">
+          📷 Añadir foto del ticket
+          <input type="file" accept="image/*" style="display:none" id="exp-img-input">
+        </label>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="expSave()">Guardar gasto</button>
+      <div style="height:12px"></div>
+    `);
+    window.expCalc = () => {
+      const p = parseFloat($('exp-price')?.value) || 0;
+      const q = parseFloat($('exp-qty')?.value) || 1;
+      if ($('exp-total')) $('exp-total').value = (p * q).toFixed(2);
+    };
+    window.expSave = async () => {
+      const imgInput = $('exp-img-input');
+      let img = null;
+      if (imgInput && imgInput.files.length) {
+        const imgs = await handleImgUpload(imgInput);
+        img = imgs[0] || null;
+      }
+      const price = parseFloat($('exp-price')?.value) || 0;
+      const qty = parseFloat($('exp-qty')?.value) || 1;
+      const expense = {
+        id: uid(),
+        category: $('exp-cat')?.value || '',
+        description: $('exp-desc')?.value || '',
+        price, qty, total: price * qty,
+        date: $('exp-date')?.value || today(),
+        note: $('exp-note')?.value || '',
+        image: img
+      };
+      const expenses = DB.get('expenses') || [];
+      expenses.push(expense);
+      DB.set('expenses', expenses);
+      App.forceCloseDrawer();
+      App.toast('Gasto registrado');
+      App.navigate(App.currentPage);
+    };
+  },
+
+  newNote(fromModal = false) {
+    const s = DB.get('settings');
+    App.openDrawer('Nueva nota', `
+      <div class="form-group">
+        <label class="form-label">Título</label>
+        <input class="form-input" id="note-title-new" placeholder="Título de la nota">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-select" id="note-cat-new">
+          <option value="">Sin categoría</option>
+          ${s.categories.map(c => `<option>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Texto</label>
+        <textarea class="form-textarea" id="note-text-new" placeholder="Escribe tu nota..." style="height:120px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Imágenes</label>
+        <label class="img-upload-area">
+          📷 Añadir imágenes
+          <input type="file" accept="image/*" multiple style="display:none" id="note-img-input">
+        </label>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="noteSaveNew(${fromModal})">Guardar nota</button>
+      <div style="height:12px"></div>
+    `);
+    window.noteSaveNew = async (fromModal) => {
+      const imgInput = $('note-img-input');
+      let images = [];
+      if (imgInput && imgInput.files.length) images = await handleImgUpload(imgInput);
+      const note = {
+        id: uid(),
+        createdAt: new Date().toISOString(),
+        title: $('note-title-new')?.value || '',
+        category: $('note-cat-new')?.value || '',
+        text: $('note-text-new')?.value || '',
+        date: today(),
+        images
+      };
+      const notes = DB.get('notes') || [];
+      notes.push(note);
+      DB.set('notes', notes);
+      App.forceCloseDrawer();
+      App.toast('Nota guardada');
+      if (fromModal) Pages.notes(); else App.navigate(App.currentPage);
+    };
+  },
+
+  newTaskForDate(dateStr) {
+    App.openDrawer('Nueva tarea', `
+      <div class="form-group">
+        <label class="form-label">Título</label>
+        <input class="form-input" id="task-title-fd" placeholder="¿Qué hay que hacer?">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción (opcional)</label>
+        <input class="form-input" id="task-desc-fd" placeholder="Más detalles...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input class="form-input" type="date" id="task-date-fd" value="${dateStr}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hora (opcional)</label>
+          <input class="form-input" type="time" id="task-time-fd">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="taskSaveFd()">Crear tarea</button>
+      <div style="height:12px"></div>
+    `);
+    window.taskSaveFd = () => {
+      const title = $('task-title-fd')?.value?.trim();
+      if (!title) { App.toast('Añade un título', 'error'); return; }
+      const task = {
+        id: uid(), title,
+        desc: $('task-desc-fd')?.value || '',
+        date: $('task-date-fd')?.value || dateStr,
+        time: $('task-time-fd')?.value || '',
+        done: false, createdAt: new Date().toISOString()
+      };
+      const tasks = DB.get('tasks') || [];
+      tasks.push(task);
+      DB.set('tasks', tasks);
+      App.forceCloseDrawer();
+      App.toast('Tarea creada');
+      Pages.calendar();
+    };
+  },
+
+  newTask(fromModal = false) {
+    App.openDrawer('Nueva tarea', `
+      <div class="form-group">
+        <label class="form-label">Título</label>
+        <input class="form-input" id="task-title" placeholder="¿Qué hay que hacer?">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción (opcional)</label>
+        <input class="form-input" id="task-desc" placeholder="Más detalles...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input class="form-input" type="date" id="task-date" value="${today()}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hora (opcional)</label>
+          <input class="form-input" type="time" id="task-time">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="taskSave(${fromModal})">Crear tarea</button>
+      <div style="height:12px"></div>
+    `);
+    window.taskSave = (fromModal) => {
+      const title = $('task-title')?.value?.trim();
+      if (!title) { App.toast('Añade un título', 'error'); return; }
+      const task = {
+        id: uid(),
+        title,
+        desc: $('task-desc')?.value || '',
+        date: $('task-date')?.value || '',
+        time: $('task-time')?.value || '',
+        done: false,
+        createdAt: new Date().toISOString()
+      };
+      const tasks = DB.get('tasks') || [];
+      tasks.push(task);
+      DB.set('tasks', tasks);
+      App.forceCloseDrawer();
+      App.toast('Tarea creada');
+      if (fromModal) Pages.agenda(); else App.navigate(App.currentPage);
+    };
+  },
+
+  editTask(id) {
+    const tasks = DB.get('tasks') || [];
+    const t = tasks.find(t => t.id === id);
+    if (!t) return;
+    App.openDrawer('Editar tarea', `
+      <div class="form-group">
+        <label class="form-label">Título</label>
+        <input class="form-input" id="task-title-e" value="${t.title}" placeholder="Título">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <input class="form-input" id="task-desc-e" value="${t.desc||''}" placeholder="Descripción...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input class="form-input" type="date" id="task-date-e" value="${t.date||''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hora</label>
+          <input class="form-input" type="time" id="task-time-e" value="${t.time||''}">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-full" onclick="taskUpdate('${id}')">Guardar</button>
+        <button class="btn btn-danger" onclick="Tasks.delete('${id}')">🗑️</button>
+      </div>
+      <div style="height:12px"></div>
+    `);
+    window.taskUpdate = (id) => {
+      const tasks = DB.get('tasks') || [];
+      const t = tasks.find(t => t.id === id);
+      if (!t) return;
+      t.title = $('task-title-e')?.value || t.title;
+      t.desc = $('task-desc-e')?.value || '';
+      t.date = $('task-date-e')?.value || '';
+      t.time = $('task-time-e')?.value || '';
+      DB.set('tasks', tasks);
+      App.forceCloseDrawer();
+      App.toast('Tarea actualizada');
+      Pages.agenda();
+    };
+  },
+
+  newProduct() {
+    const s = DB.get('settings');
+    App.openDrawer('Nuevo diseño', `
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input class="form-input" id="p-name" placeholder="Nombre del diseño">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Categoría</label>
+          <select class="form-select" id="p-cat">
+            ${s.categories.map(c => `<option>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tamaño</label>
+          <select class="form-select" id="p-size">
+            ${s.sizes.map(sz => `<option value="${sz.id}">${sz.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Precio venta (€)</label>
+          <input class="form-input" type="number" step="0.01" id="p-price" placeholder="0.00" oninput="productCalc()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Coste (€)</label>
+          <input class="form-input" type="number" step="0.01" id="p-cost" placeholder="0.00" oninput="productCalc()">
+        </div>
+      </div>
+      <div id="p-calc" style="font-size:12px;color:var(--text2);margin-bottom:10px"></div>
+      <div class="form-group">
+        <label class="form-label">Notas</label>
+        <textarea class="form-textarea" id="p-notes" placeholder="Notas del diseño..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Imagen</label>
+        <label class="img-upload-area">
+          📷 Añadir imagen del diseño
+          <input type="file" accept="image/*" multiple style="display:none" id="p-img-input">
+        </label>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="productSave()">Guardar diseño</button>
+      <div style="height:12px"></div>
+    `);
+
+    window.productCalc = () => {
+      const price = parseFloat($('p-price')?.value) || 0;
+      const cost = parseFloat($('p-cost')?.value) || 0;
+      const profit = price - cost;
+      const margin = price > 0 ? profit/price*100 : 0;
+      const el = $('p-calc');
+      if (el) el.innerHTML = `Beneficio: <strong style="color:var(--green)">${fmt(profit)}</strong> · Margen: ${fmtPct(margin)}`;
+    };
+
+    window.productSave = async () => {
+      const imgInput = $('p-img-input');
+      let images = [];
+      if (imgInput && imgInput.files.length) images = await handleImgUpload(imgInput);
+      const price = parseFloat($('p-price')?.value) || 0;
+      const cost = parseFloat($('p-cost')?.value) || 0;
+      const sizeId = $('p-size')?.value;
+      const sz = getSizeById(sizeId);
+      const product = {
+        id: uid(),
+        name: $('p-name')?.value || 'Sin nombre',
+        category: $('p-cat')?.value || '',
+        sizeId, size: sz?.name || sizeId,
+        price, cost,
+        profit: price - cost,
+        margin: price > 0 ? (price-cost)/price*100 : 0,
+        notes: $('p-notes')?.value || '',
+        images,
+        available: true,
+        createdAt: new Date().toISOString()
+      };
+      const catalog = DB.get('catalog') || [];
+      catalog.push(product);
+      DB.set('catalog', catalog);
+      App.forceCloseDrawer();
+      App.toast('Diseño guardado');
+      Pages.catalog();
+    };
+  },
+
+  newCashMovement() {
+    App.openDrawer('Movimiento de caja', `
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" id="cash-type">
+          <option value="in">Entrada 💵</option>
+          <option value="out">Salida 💸</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Concepto</label>
+        <input class="form-input" id="cash-label" placeholder="Descripción...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cantidad (€)</label>
+          <input class="form-input" type="number" step="0.01" id="cash-amount" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Método</label>
+          <select class="form-select" id="cash-method">
+            <option>Efectivo</option>
+            <option>Banco</option>
+            <option>Tarjeta</option>
+            <option>Bizum</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input class="form-input" type="date" id="cash-date" value="${today()}">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="cashSave()">Guardar movimiento</button>
+      <div style="height:12px"></div>
+    `);
+    window.cashSave = () => {
+      const amount = parseFloat($('cash-amount')?.value) || 0;
+      if (!amount) { App.toast('Introduce una cantidad', 'error'); return; }
+      const mov = {
+        id: uid(),
+        type: $('cash-type')?.value || 'in',
+        label: $('cash-label')?.value || '',
+        amount,
+        method: $('cash-method')?.value || 'Efectivo',
+        date: $('cash-date')?.value || today()
+      };
+      const movs = DB.get('cashMovements') || [];
+      movs.push(mov);
+      DB.set('cashMovements', movs);
+      App.forceCloseDrawer();
+      App.toast('Movimiento registrado');
+      App.navigate(App.currentPage);
+    };
+  }
+};
+
+// =============================================
+// MODALS (full screen detail views)
+// =============================================
+const Modals = {
+  orderDetail(id) {
+    const orders = DB.get('orders') || [];
+    const order = orders.find(o => o.id === id);
+    if (!order) return;
+
+    const statuses = ['pending','preparing','ready','sent','delivered','cancelled'];
+
+    App.openModal(order.client || 'Pedido', `
+      <div style="height:8px"></div>
+
+      <!-- STATUS CHANGE -->
+      <div class="section-label">Estado</div>
+      <div class="chip-row" style="margin-bottom:14px">
+        ${statuses.map(st => `
+          <div class="chip ${order.status===st?'active':''}" onclick="OrderDetail.setStatus('${id}','${st}')">${statusEmoji(st)} ${statusLabel(st)}</div>
+        `).join('')}
+      </div>
+
+      <!-- FINANCIAL SUMMARY -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+          ${order.discPct > 0 ? `
+            <div class="calc-row"><span class="label">Precio normal</span><span class="value">${fmt(order.price)}</span></div>
+            <div class="calc-row"><span class="label">Descuento ${order.discPct}%</span><span class="value red">−${fmt(order.discAmt)}</span></div>
+          ` : ''}
+          <div class="calc-row total"><span class="label">Precio final</span><span class="value accent">${fmt(order.finalPrice)}</span></div>
+          <div class="calc-row"><span class="label">Coste producción</span><span class="value red">−${fmt(order.cost)}</span></div>
+          <div class="calc-row"><span class="label">Beneficio</span><span class="value green">${fmt(order.profit)}</span></div>
+          <div class="calc-row"><span class="label">Margen</span><span class="value">${fmtPct(order.margin)}</span></div>
+        </div>
+      </div>
+
+      <!-- ITEMS -->
+      <div class="section-label">Productos</div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-body" style="padding:4px 14px">
+          ${(order.items||[]).map(item => `
+            <div class="list-item">
+              <div class="list-item-icon">🖼️</div>
+              <div class="list-item-info">
+                <div class="list-item-title">${item.qty} × ${item.sizeName || item.sizeId}</div>
+                <div class="list-item-sub">${fmt(item.priceSnapshot)}/ud · Coste: ${fmt(item.costSnapshot)}/ud</div>
+              </div>
+              <div class="list-item-right">
+                <div class="list-item-amount">${fmt(item.priceSnapshot * item.qty)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- DETAILS -->
+      <div class="section-label">Detalles</div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+          <div class="calc-row"><span class="label">Cliente</span><span class="value">${order.client || '—'}</span></div>
+          <div class="calc-row"><span class="label">Fecha pedido</span><span class="value">${fmtDateFull(order.date)}</span></div>
+          <div class="calc-row"><span class="label">Fecha envío</span><span class="value">${order.shipDate ? fmtDateFull(order.shipDate) : '—'}</span></div>
+          ${order.notes ? `<div class="calc-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="label">Notas</span><span style="font-size:13px;color:var(--text);line-height:1.5">${order.notes}</span></div>` : ''}
+        </div>
+      </div>
+
+      <!-- IMAGES -->
+      ${order.images && order.images.length ? `
+        <div class="section-label">Imágenes</div>
+        <div class="img-thumbs" style="margin-bottom:14px">${order.images.map(img => imgToThumb(img)).join('')}</div>
+      ` : ''}
+
+      <!-- ACTIONS -->
+      <div style="display:flex;gap:8px;margin-bottom:24px">
+        <button class="btn btn-secondary btn-full" onclick="OrderDetail.editNotes('${id}')">✏️ Editar notas</button>
+        <button class="btn btn-danger" onclick="OrderDetail.delete('${id}')">🗑️</button>
+      </div>
+    `, `<button class="icon-btn" onclick="OrderDetail.addImg('${id}')">📷</button>`);
+  },
+
+  productDetail(id) {
+    const catalog = DB.get('catalog') || [];
+    const p = catalog.find(pr => pr.id === id);
+    if (!p) return;
+
+    App.openModal(p.name, `
+      <div style="height:8px"></div>
+      ${p.images && p.images[0] ? `<img src="${p.images[0]}" style="width:100%;height:200px;object-fit:cover;border-radius:var(--radius);margin-bottom:14px;display:block" onclick="App.lightbox('${p.images[0]}')">` : ''}
+      
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <span class="cat-tag">${p.category}</span>
+        <span class="cat-tag">${p.size || p.sizeId}</span>
+        <span class="cat-tag" style="${p.available!==false ? 'color:var(--green)' : 'color:var(--red)'}">
+          ${p.available !== false ? '✓ Disponible' : '× No disponible'}
+        </span>
+      </div>
+
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+          <div class="calc-row total"><span class="label">Precio venta</span><span class="value accent">${fmt(p.price)}</span></div>
+          <div class="calc-row"><span class="label">Coste</span><span class="value red">−${fmt(p.cost)}</span></div>
+          <div class="calc-row"><span class="label">Beneficio</span><span class="value green">${fmt(p.profit)}</span></div>
+          <div class="calc-row"><span class="label">Margen</span><span class="value">${fmtPct(p.margin)}</span></div>
+        </div>
+      </div>
+
+      ${p.notes ? `<div class="card" style="margin-bottom:12px"><div class="card-body" style="font-size:13px;color:var(--text2);line-height:1.6">${p.notes}</div></div>` : ''}
+
+      ${(p.images||[]).length > 1 ? `
+        <div class="img-thumbs" style="margin-bottom:14px">${p.images.map(img => imgToThumb(img)).join('')}</div>
+      ` : ''}
+
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn ${p.available!==false?'btn-secondary':'btn-success'} btn-full" onclick="ProductDetail.toggleAvail('${id}')">
+          ${p.available !== false ? 'Marcar no disponible' : 'Marcar disponible'}
+        </button>
+        <button class="btn btn-danger" onclick="ProductDetail.delete('${id}')">🗑️</button>
+      </div>
+      <div style="height:24px"></div>
+    `);
+  }
+};
+
+const OrderDetail = {
+  setStatus(id, status) {
+    const orders = DB.get('orders') || [];
+    const o = orders.find(o => o.id === id);
+    if (o) { o.status = status; DB.set('orders', orders); }
+    App.updateBadge();
+    Modals.orderDetail(id);
+  },
+  editNotes(id) {
+    const orders = DB.get('orders') || [];
+    const o = orders.find(o => o.id === id);
+    if (!o) return;
+    App.openDrawer('Notas del pedido', `
+      <div class="form-group">
+        <label class="form-label">Notas</label>
+        <textarea class="form-textarea" id="edit-order-notes" style="height:150px">${o.notes||''}</textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveOrderNotes('${id}')">Guardar</button>
+      <div style="height:12px"></div>
+    `);
+    window.saveOrderNotes = (id) => {
+      const orders = DB.get('orders') || [];
+      const o = orders.find(o => o.id === id);
+      if (o) { o.notes = $('edit-order-notes')?.value || ''; DB.set('orders', orders); }
+      App.forceCloseDrawer();
+      App.toast('Notas guardadas');
+      Modals.orderDetail(id);
+    };
+  },
+  async addImg(id) {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
+    input.onchange = async () => {
+      const orders = DB.get('orders') || [];
+      const o = orders.find(o => o.id === id);
+      if (!o) return;
+      o.images = await handleImgUpload(input, o.images || []);
+      DB.set('orders', orders);
+      App.toast('Imagen añadida');
+      Modals.orderDetail(id);
+    };
+    input.click();
+  },
+  delete(id) {
+    if (!confirm('¿Eliminar este pedido? Esta acción no se puede deshacer.')) return;
+    let orders = DB.get('orders') || [];
+    orders = orders.filter(o => o.id !== id);
+    DB.set('orders', orders);
+    App.closeModal();
+    App.toast('Pedido eliminado');
+    App.updateBadge();
+  }
+};
+
+const ProductDetail = {
+  toggleAvail(id) {
+    const catalog = DB.get('catalog') || [];
+    const p = catalog.find(p => p.id === id);
+    if (p) { p.available = !p.available; DB.set('catalog', catalog); }
+    Modals.productDetail(id);
+  },
+  delete(id) {
+    if (!confirm('¿Eliminar este diseño?')) return;
+    let catalog = DB.get('catalog') || [];
+    catalog = catalog.filter(p => p.id !== id);
+    DB.set('catalog', catalog);
+    App.closeModal();
+    App.toast('Diseño eliminado');
+  }
+};
+
+// =============================================
+// DATA IMPORT/EXPORT
+// =============================================
+const DataIO = {
+  showOptions() {
+    App.openDrawer('Datos', `
+      <div style="margin-bottom:12px">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Exporta tus datos para hacer una copia de seguridad o importa datos desde una copia anterior.</div>
+        <button class="btn btn-secondary btn-full" onclick="DataIO.exportJSON()" style="margin-bottom:8px">📤 Exportar datos (JSON)</button>
+        <button class="btn btn-secondary btn-full" onclick="DataIO.exportCSV()" style="margin-bottom:8px">📊 Exportar pedidos (CSV)</button>
+        <label class="btn btn-secondary btn-full" style="justify-content:center;cursor:pointer">
+          📥 Importar datos (JSON)
+          <input type="file" accept=".json" style="display:none" onchange="DataIO.importJSON(this)">
+        </label>
+      </div>
+      <div class="divider"></div>
+      <div style="margin-top:12px">
+        <button class="btn btn-danger btn-full" onclick="DataIO.resetAll()">⚠️ Resetear todos los datos</button>
+      </div>
+      <div style="height:12px"></div>
+    `);
+  },
+
+  exportJSON() {
+    const keys = ['settings','orders','catalog','notes','expenses','tasks','goalContributions','cashMovements'];
+    const data = {};
+    keys.forEach(k => { data[k] = DB.get(k); });
+    data._exported = new Date().toISOString();
+    data._version = '1.0';
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `posterboss-backup-${today()}.json`;
+    a.click(); URL.revokeObjectURL(url);
+    App.toast('Datos exportados');
+  },
+
+  exportCSV() {
+    const orders = DB.get('orders') || [];
+    const rows = [['ID','Cliente','Fecha','Estado','Items','Precio','Descuento','Precio Final','Coste','Beneficio','Margen%','Notas']];
+    orders.forEach(o => {
+      rows.push([
+        o.id, o.client, o.date, statusLabel(o.status),
+        (o.items||[]).map(i => `${i.qty}x${i.sizeName}`).join('+'),
+        o.price, o.discAmt, o.finalPrice, o.cost, o.profit,
+        (o.margin||0).toFixed(1), o.notes
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `posterboss-pedidos-${today()}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    App.toast('CSV exportado');
+  },
+
+  importJSON(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        const keys = ['settings','orders','catalog','notes','expenses','tasks','goalContributions','cashMovements'];
+        keys.forEach(k => { if (data[k] !== undefined) DB.set(k, data[k]); });
+        App.forceCloseDrawer();
+        App.toast('Datos importados correctamente');
+        App.navigate('home');
+      } catch(err) {
+        App.toast('Error al importar: JSON inválido', 'error');
+      }
+    };
+    reader.readAsText(file);
+  },
+
+  resetAll() {
+    if (!confirm('⚠️ ¿Eliminar TODOS los datos? Esta acción no se puede deshacer.')) return;
+    if (!confirm('¿Estás seguro? Se eliminarán pedidos, catálogo, notas y todo lo demás.')) return;
+    const keys = ['settings','orders','catalog','notes','expenses','tasks','goalContributions','cashMovements'];
+    keys.forEach(k => localStorage.removeItem('pb_' + k));
+    App.forceCloseDrawer();
+    App.toast('Datos eliminados. Recargando...');
+    setTimeout(() => location.reload(), 1500);
+  }
+};
+
+// =============================================
+// INIT
+// =============================================
+document.addEventListener('DOMContentLoaded', () => {
+  App.init();
+});
+</script>
+</body>
+</html>
